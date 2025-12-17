@@ -1,5 +1,6 @@
 #include "raylib.h"
 #include "game_board.h"
+#include "renderer.h"
 
 int main(void)
 {
@@ -7,19 +8,39 @@ int main(void)
     GameBoard board;
     GameBoard_Init(&board);
 
+    // Add some test blocks to visualize
+    GameBoard_SetCell(&board, 0, 11, MAKE_BLOCK(BLOCK_RED, STATE_NORMAL));
+    GameBoard_SetCell(&board, 1, 11, MAKE_BLOCK(BLOCK_BLUE, STATE_NORMAL));
+    GameBoard_SetCell(&board, 2, 11, MAKE_BLOCK(BLOCK_GREEN, STATE_NORMAL));
+    GameBoard_SetCell(&board, 3, 11, MAKE_BLOCK(BLOCK_YELLOW, STATE_NORMAL));
+    GameBoard_SetCell(&board, 4, 11, MAKE_BLOCK(BLOCK_PURPLE, STATE_NORMAL));
+    GameBoard_SetCell(&board, 5, 11, MAKE_BLOCK(BLOCK_RED, STATE_NORMAL));
+    GameBoard_SetCell(&board, 0, 10, MAKE_BLOCK(BLOCK_BLUE, STATE_NORMAL));
+    GameBoard_SetCell(&board, 1, 10, MAKE_BLOCK(BLOCK_GREEN, STATE_NORMAL));
+    GameBoard_SetCell(&board, 2, 10, MAKE_BLOCK(BLOCK_YELLOW, STATE_NORMAL));
+
     // Initialize window
-    InitWindow(800, 600, "Puzzle Attack");
+    InitWindow(WINDOW_WIDTH, WINDOW_HEIGHT, "Puzzle Attack");
     SetTargetFPS(60);
+
+    // Calculate centered board position
+    int boardX = Renderer_GetCenteredOffsetX();
+    int boardY = Renderer_GetCenteredOffsetY();
 
     // Main game loop
     while (!WindowShouldClose())
     {
         BeginDrawing();
-        ClearBackground(RAYWHITE);
-        DrawText("Puzzle Attack", 280, 260, 40, DARKGRAY);
-        DrawText("Press ESC to quit", 300, 320, 20, GRAY);
-        DrawText(TextFormat("Board: %dx%d", BOARD_WIDTH, BOARD_HEIGHT), 320, 360, 20, GRAY);
-        DrawFPS(10, 10);
+        ClearBackground(BLACK);
+
+        // Draw the game board
+        Renderer_DrawBoard(&board, boardX, boardY);
+
+        // Draw UI text
+        DrawText("Puzzle Attack", 10, 10, 20, WHITE);
+        DrawText("Press ESC to quit", 10, 35, 16, GRAY);
+        DrawFPS(WINDOW_WIDTH - 80, 10);
+
         EndDrawing();
     }
 

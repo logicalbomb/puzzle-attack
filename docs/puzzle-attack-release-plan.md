@@ -55,7 +55,7 @@ This release plan breaks down your Puzzle Attack project into 4 major phases ali
   - Block types (colors: red, blue, green, yellow, purple)
   - Block states (normal, falling, matched, empty)
 
-- [ ] **GAME-002**: Implement board rendering
+- [x] **GAME-002**: Implement board rendering
   - Draw grid with borders
   - Render blocks as colored squares/sprites
   - Display grid coordinates (for debugging)

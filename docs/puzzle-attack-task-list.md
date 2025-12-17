@@ -177,7 +177,7 @@ typedef struct {
 
 ---
 
-### GAME-002: Board Rendering
+### GAME-002: Board Rendering ✅ COMPLETED
 **Description:** Draw the game board and blocks on screen
 
 **Context:** We need to see the board to develop the game.
