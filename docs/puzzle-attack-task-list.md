@@ -16,7 +16,7 @@ Success: [How to verify]
 
 ## PHASE 0: FOUNDATION (Week 1-2)
 
-### ENV-001: Development Environment Setup
+### ENV-001: Development Environment Setup ✅ COMPLETED
 **Description:** Set up C compiler, raylib, and build system for cross-platform compilation
 
 **Context:** This is the foundation for the entire project. We need raylib for graphics/audio and a reliable build system.
@@ -38,7 +38,7 @@ Success: [How to verify]
 
 ---
 
-### ARCH-001: Project Directory Structure
+### ARCH-001: Project Directory Structure ✅ COMPLETED
 **Description:** Create organized folder structure for client/server architecture
 
 **Context:** Separating client, server, and shared code now will make networking easier later.
@@ -69,7 +69,7 @@ puzzle-attack/
 
 ---
 
-### TEST-001: Basic Raylib Window
+### TEST-001: Basic Raylib Window ✅ COMPLETED
 **Description:** Create minimal raylib application that opens a window
 
 **Context:** This validates our setup and creates the game loop foundation.

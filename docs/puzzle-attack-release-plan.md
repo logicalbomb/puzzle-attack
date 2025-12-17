@@ -13,13 +13,13 @@ This release plan breaks down your Puzzle Attack project into 4 major phases ali
 **Deliverable:** Compiled "Hello World" with raylib rendering a window
 
 ### Tasks
-- [ ] **ENV-001**: Set up development environment (C compiler, raylib, build system)
+- [x] **ENV-001**: Set up development environment (C compiler, raylib, build system)
   - Install GCC/Clang for your platform
   - Install raylib library
   - Set up Makefile or CMake build system
   - Verify cross-compilation capability (if targeting multiple platforms from start)
   
-- [ ] **ARCH-001**: Create project directory structure
+- [x] **ARCH-001**: Create project directory structure
   ```
   puzzle-attack/
   ├── src/
@@ -35,7 +35,7 @@ This release plan breaks down your Puzzle Attack project into 4 major phases ali
   └── Makefile
   ```
 
-- [ ] **TEST-001**: Create basic window with raylib
+- [x] **TEST-001**: Create basic window with raylib
   - Initialize window (800x600)
   - Set target FPS to 60
   - Basic game loop (BeginDrawing/EndDrawing)
