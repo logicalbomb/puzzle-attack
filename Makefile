@@ -75,7 +75,8 @@ $(BUILD_DIR):
 	mkdir -p $(BUILD_DIR)/shared
 
 # Compile source files
-$(BUILD_DIR)/%.o: $(SRC_DIR)/%.c | $(BUILD_DIR)
+$(BUILD_DIR)/%.o: $(SRC_DIR)/%.c
+	@mkdir -p $(dir $@)
 	$(CC) $(CFLAGS) $(RAYLIB_CFLAGS) -c $< -o $@
 
 # Link final executable

@@ -115,7 +115,7 @@ int main(void) {
 
 ## PHASE 1: CORE GAMEPLAY (Dec 16 - Jan 1)
 
-### GAME-001: Game Board Data Structure
+### GAME-001: Game Board Data Structure ✅ COMPLETED
 **Description:** Define the data structures to represent the game board and blocks
 
 **Context:** This is the core data model. Everything else builds on this.
@@ -165,8 +165,12 @@ typedef enum {
 #define BLOCK_STATE(cell) ((BlockState)(((cell) >> 8) & 0xFF))
 #define MAKE_BLOCK(type, state) ((uint16_t)(((state) << 8) | (type)))
 
+// Grid indexing (1D array for simpler serialization)
+#define BOARD_SIZE (BOARD_WIDTH * BOARD_HEIGHT)
+#define GRID_INDEX(x, y) ((y) * BOARD_WIDTH + (x))
+
 typedef struct {
-    uint16_t grid[BOARD_HEIGHT][BOARD_WIDTH];
+    uint16_t grid[BOARD_SIZE];
     int score;
 } GameBoard;
 ```

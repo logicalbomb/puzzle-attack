@@ -50,7 +50,7 @@ This release plan breaks down your Puzzle Attack project into 4 major phases ali
 **Deliverable:** Functional single-player puzzle game
 
 ### Milestone 1.1: Game Board Rendering (Week 1-2)
-- [ ] **GAME-001**: Define game board data structure
+- [x] **GAME-001**: Define game board data structure
   - Grid size (e.g., 6x12 board)
   - Block types (colors: red, blue, green, yellow, purple)
   - Block states (normal, falling, matched, empty)
