@@ -25,4 +25,7 @@ void Renderer_DrawBlock(BlockType type, int gridX, int gridY, int offsetX, int o
 int Renderer_GetCenteredOffsetX(void);
 int Renderer_GetCenteredOffsetY(void);
 
+// Draw cursor highlight at grid position
+void Renderer_DrawCursor(int gridX, int gridY, int offsetX, int offsetY);
+
 #endif // RENDERER_H

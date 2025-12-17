@@ -237,22 +237,25 @@ void RenderBoard(GameBoard* board, int offsetX, int offsetY);
 
 ---
 
-### INPUT-001: Cursor Selection System
+### INPUT-001: Cursor Selection System ✅ COMPLETED
 **Description:** Implement player cursor to select blocks
 
 **Context:** Players need to choose which blocks to swap.
 
 **Requirements:**
-- Cursor highlights current block
+- Cursor highlights two adjacent horizontal blocks (for swapping)
 - Arrow keys move cursor (up/down/left/right)
 - Cursor wraps around edges (optional)
-- Cursor cannot go out of bounds
-- Visual highlight: draw border around selected block
+- Cursor cannot go out of bounds (x: 0 to BOARD_WIDTH-2)
+- Visual highlight: draw border around selected block pair
+- Cursor color must be distinct from block colors (use orange, not yellow)
+- Dark outline around cursor for depth and visibility
 
 **Success Criteria:**
 - Arrow keys move cursor
-- Selected block has visible highlight (yellow border)
-- Cursor stays within 6x12 grid
+- Two horizontal blocks have visible highlight (orange border with dark outline for depth)
+- Cursor color is distinct from all block colors (uses orange, not yellow)
+- Cursor stays within valid range (x: 0-4, y: 0-11)
 - Smooth, responsive controls
 
 **Files to Create:**
@@ -262,8 +265,9 @@ void RenderBoard(GameBoard* board, int offsetX, int offsetY);
 **Data Structure:**
 ```c
 typedef struct {
-    int x, y;  // Current cursor position
+    int x, y;  // Current cursor position (left block of the pair)
 } Cursor;
+// Cursor covers blocks at (x, y) and (x+1, y)
 ```
 
 ---

@@ -65,7 +65,7 @@ This release plan breaks down your Puzzle Attack project into 4 major phases ali
   - Ensure no initial matches exist
 
 ### Milestone 1.2: Input & Block Movement (Week 3)
-- [ ] **INPUT-001**: Implement cursor/selection system
+- [x] **INPUT-001**: Implement cursor/selection system
   - Mouse input for block selection
   - Keyboard input (arrow keys + select)
   - Visual indicator for selected block

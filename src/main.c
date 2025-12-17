@@ -1,6 +1,7 @@
 #include "raylib.h"
 #include "game_board.h"
 #include "renderer.h"
+#include "input.h"
 
 int main(void)
 {
@@ -8,6 +9,10 @@ int main(void)
     GameBoard board;
     GameBoard_Init(&board);
     GameBoard_FillRandom(&board);
+
+    // Initialize cursor
+    Cursor cursor;
+    Cursor_Init(&cursor);
 
     // Initialize window
     InitWindow(WINDOW_WIDTH, WINDOW_HEIGHT, "Puzzle Attack");
@@ -20,15 +25,22 @@ int main(void)
     // Main game loop
     while (!WindowShouldClose())
     {
+        // Handle input
+        Cursor_HandleInput(&cursor);
+
+        // Rendering
         BeginDrawing();
         ClearBackground(BLACK);
 
         // Draw the game board
         Renderer_DrawBoard(&board, boardX, boardY);
 
+        // Draw cursor
+        Renderer_DrawCursor(cursor.x, cursor.y, boardX, boardY);
+
         // Draw UI text
         DrawText("Puzzle Attack", 10, 10, 20, WHITE);
-        DrawText("Press ESC to quit", 10, 35, 16, GRAY);
+        DrawText("Arrow keys to move cursor", 10, 35, 16, GRAY);
         DrawFPS(WINDOW_WIDTH - 80, 10);
 
         EndDrawing();

@@ -92,3 +92,40 @@ int Renderer_GetCenteredOffsetY(void)
 {
     return (WINDOW_HEIGHT - BOARD_PIXEL_HEIGHT) / 2;
 }
+
+// Cursor styling constants
+static const Color CURSOR_COLOR = ORANGE;
+static const Color CURSOR_BORDER_COLOR = { 139, 69, 0, 255 };  // Dark orange/brown
+static const int CURSOR_MAIN_THICKNESS = 3;
+static const int CURSOR_BORDER_THICKNESS = 1;
+
+void Renderer_DrawCursor(int gridX, int gridY, int offsetX, int offsetY)
+{
+    int pixelX = offsetX + (gridX * BLOCK_SIZE);
+    int pixelY = offsetY + (gridY * BLOCK_SIZE);
+    int width = BLOCK_SIZE * 2;
+    int height = BLOCK_SIZE;
+
+    // Draw outer dark border for depth
+    DrawRectangleLinesEx(
+        (Rectangle){ pixelX - CURSOR_BORDER_THICKNESS, pixelY - CURSOR_BORDER_THICKNESS,
+                     width + (CURSOR_BORDER_THICKNESS * 2), height + (CURSOR_BORDER_THICKNESS * 2) },
+        CURSOR_BORDER_THICKNESS,
+        CURSOR_BORDER_COLOR
+    );
+
+    // Draw main cursor border (distinct from all block colors)
+    DrawRectangleLinesEx(
+        (Rectangle){ pixelX, pixelY, width, height },
+        CURSOR_MAIN_THICKNESS,
+        CURSOR_COLOR
+    );
+
+    // Draw inner dark border for depth
+    DrawRectangleLinesEx(
+        (Rectangle){ pixelX + CURSOR_MAIN_THICKNESS, pixelY + CURSOR_MAIN_THICKNESS,
+                     width - (CURSOR_MAIN_THICKNESS * 2), height - (CURSOR_MAIN_THICKNESS * 2) },
+        CURSOR_BORDER_THICKNESS,
+        CURSOR_BORDER_COLOR
+    );
+}
