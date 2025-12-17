@@ -1,0 +1,13 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(clang:*)",
+      "Bash(gcc --version:*)",
+      "Bash(pkg-config:*)",
+      "Bash(brew list:*)",
+      "Bash(brew info:*)",
+      "Bash(brew install:*)",
+      "Bash(make:*)"
+    ]
+  }
+}

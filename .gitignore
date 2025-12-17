@@ -1,0 +1,23 @@
+# Build artifacts
+build/
+*.o
+*.exe
+
+# macOS
+.DS_Store
+*.dSYM/
+
+# IDE / Editor
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Compiled binaries
+puzzle-attack
+puzzle-attack.exe
+
+# Debug files
+*.pdb
+*.ilk
