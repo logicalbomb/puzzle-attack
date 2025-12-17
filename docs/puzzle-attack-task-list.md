@@ -122,15 +122,17 @@ int main(void) {
 
 **Requirements:**
 - Define constants: BOARD_WIDTH (6), BOARD_HEIGHT (12)
-- Define BlockType enum: EMPTY, RED, BLUE, GREEN, YELLOW, PURPLE
+- Define BlockType enum as bitfield values: EMPTY, RED, BLUE, GREEN, YELLOW, PURPLE
 - Define BlockState enum: NORMAL, FALLING, MATCHED, LOCKED
-- Create Block struct with: type, state, position (x, y)
-- Create GameBoard struct with: Block grid[BOARD_HEIGHT][BOARD_WIDTH]
+- Grid uses uint16_t where lower byte is BlockType bitfield, upper byte is BlockState
+- Create GameBoard struct with: uint16_t grid[BOARD_HEIGHT][BOARD_WIDTH]
+- Provide helper macros/functions to extract type and state from cell value
 
 **Success Criteria:**
 - Structures compile without errors
 - Can create a GameBoard instance
 - Can access individual blocks: board.grid[y][x]
+- Can extract type and state from a cell value
 
 **Files to Create:**
 - `include/game_board.h`
@@ -138,22 +140,33 @@ int main(void) {
 
 **Example:**
 ```c
+#include <stdint.h>
+
+// Block types (lower byte - bitfield)
 typedef enum {
-    BLOCK_EMPTY = 0,
-    BLOCK_RED,
-    BLOCK_BLUE,
-    BLOCK_GREEN,
-    BLOCK_YELLOW,
-    BLOCK_PURPLE
+    BLOCK_EMPTY  = 0x00,
+    BLOCK_RED    = 0x01,
+    BLOCK_BLUE   = 0x02,
+    BLOCK_GREEN  = 0x04,
+    BLOCK_YELLOW = 0x08,
+    BLOCK_PURPLE = 0x10
 } BlockType;
 
-typedef struct {
-    BlockType type;
-    int x, y;  // Grid position
-} Block;
+// Block states (upper byte)
+typedef enum {
+    STATE_NORMAL  = 0x00,
+    STATE_FALLING = 0x01,
+    STATE_MATCHED = 0x02,
+    STATE_LOCKED  = 0x04
+} BlockState;
+
+// Helper macros
+#define BLOCK_TYPE(cell)  ((BlockType)((cell) & 0xFF))
+#define BLOCK_STATE(cell) ((BlockState)(((cell) >> 8) & 0xFF))
+#define MAKE_BLOCK(type, state) ((uint16_t)(((state) << 8) | (type)))
 
 typedef struct {
-    Block grid[BOARD_HEIGHT][BOARD_WIDTH];
+    uint16_t grid[BOARD_HEIGHT][BOARD_WIDTH];
     int score;
 } GameBoard;
 ```
