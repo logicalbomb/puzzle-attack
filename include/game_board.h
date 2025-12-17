@@ -18,6 +18,9 @@ typedef enum {
     BLOCK_PURPLE = 0x10
 } BlockType;
 
+// Number of colored block types (excludes EMPTY)
+#define BLOCK_TYPE_COUNT 5
+
 // Block states (upper byte)
 typedef enum {
     STATE_NORMAL  = 0x00,
@@ -50,5 +53,8 @@ void GameBoard_SetCell(GameBoard* board, int x, int y, uint16_t value);
 void GameBoard_SetBlockType(GameBoard* board, int x, int y, BlockType type);
 void GameBoard_SetBlockState(GameBoard* board, int x, int y, BlockState state);
 bool GameBoard_IsValidPosition(int x, int y);
+
+// Board initialization (fills with random blocks, no initial matches)
+void GameBoard_FillRandom(GameBoard* board);
 
 #endif // GAME_BOARD_H

@@ -4,20 +4,10 @@
 
 int main(void)
 {
-    // Initialize game board
+    // Initialize game board with random blocks
     GameBoard board;
     GameBoard_Init(&board);
-
-    // Add some test blocks to visualize
-    GameBoard_SetCell(&board, 0, 11, MAKE_BLOCK(BLOCK_RED, STATE_NORMAL));
-    GameBoard_SetCell(&board, 1, 11, MAKE_BLOCK(BLOCK_BLUE, STATE_NORMAL));
-    GameBoard_SetCell(&board, 2, 11, MAKE_BLOCK(BLOCK_GREEN, STATE_NORMAL));
-    GameBoard_SetCell(&board, 3, 11, MAKE_BLOCK(BLOCK_YELLOW, STATE_NORMAL));
-    GameBoard_SetCell(&board, 4, 11, MAKE_BLOCK(BLOCK_PURPLE, STATE_NORMAL));
-    GameBoard_SetCell(&board, 5, 11, MAKE_BLOCK(BLOCK_RED, STATE_NORMAL));
-    GameBoard_SetCell(&board, 0, 10, MAKE_BLOCK(BLOCK_BLUE, STATE_NORMAL));
-    GameBoard_SetCell(&board, 1, 10, MAKE_BLOCK(BLOCK_GREEN, STATE_NORMAL));
-    GameBoard_SetCell(&board, 2, 10, MAKE_BLOCK(BLOCK_YELLOW, STATE_NORMAL));
+    GameBoard_FillRandom(&board);
 
     // Initialize window
     InitWindow(WINDOW_WIDTH, WINDOW_HEIGHT, "Puzzle Attack");

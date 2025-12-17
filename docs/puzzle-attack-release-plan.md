@@ -60,7 +60,7 @@ This release plan breaks down your Puzzle Attack project into 4 major phases ali
   - Render blocks as colored squares/sprites
   - Display grid coordinates (for debugging)
 
-- [ ] **GAME-003**: Create board initialization
+- [x] **GAME-003**: Create board initialization
   - Populate board with random blocks
   - Ensure no initial matches exist
 
