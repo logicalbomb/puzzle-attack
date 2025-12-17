@@ -66,14 +66,14 @@ This release plan breaks down your Puzzle Attack project into 4 major phases ali
 
 ### Milestone 1.2: Input & Block Movement (Week 3)
 - [x] **INPUT-001**: Implement cursor/selection system
-  - Mouse input for block selection
-  - Keyboard input (arrow keys + select)
-  - Visual indicator for selected block
+  - Cursor covers two horizontal blocks for swapping
+  - Keyboard input (arrow keys to move)
+  - Orange cursor with dark border for visibility
 
 - [ ] **INPUT-002**: Implement block swapping
-  - Swap adjacent blocks (horizontal/vertical only)
+  - SPACE key swaps the two blocks under cursor
   - Swap animation (smooth transition)
-  - Prevent invalid swaps (diagonal, out of bounds)
+  - Swaps persist (no swap-back if no match)
 
 ### Milestone 1.3: Match Detection & Clearing (Week 4)
 - [ ] **MATCH-001**: Implement match detection algorithm

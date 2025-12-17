@@ -273,23 +273,22 @@ typedef struct {
 ---
 
 ### INPUT-002: Block Swapping
-**Description:** Allow player to swap adjacent blocks
+**Description:** Allow player to swap the two blocks under the cursor
 
-**Context:** Core mechanic of match-3 games.
+**Context:** Core mechanic of match-3 games. The cursor covers two horizontal blocks.
 
 **Requirements:**
-- Press SPACE to select first block
-- Arrow key to choose direction
-- Swap with adjacent block (only orthogonal, not diagonal)
+- Press SPACE to swap the two blocks under the cursor
+- Cursor position determines which blocks are swapped: (x, y) and (x+1, y)
+- Swap always succeeds (no swap-back if no match is created)
 - Animate swap (blocks slide to new positions)
-- If swap creates no match, swap back
 - Only one swap can happen at a time
 
 **Success Criteria:**
-- Blocks swap smoothly
-- Invalid swaps are prevented (diagonal, edge of board)
+- Blocks swap smoothly when SPACE is pressed
 - Swap animation takes ~0.2 seconds
 - Board state updates correctly
+- Swaps persist regardless of whether a match occurs
 
 **Files to Modify:**
 - `src/client/input.c`
@@ -297,7 +296,8 @@ typedef struct {
 
 **Function:**
 ```c
-bool SwapBlocks(GameBoard* board, int x1, int y1, int x2, int y2);
+void SwapBlocks(GameBoard* board, int x, int y);
+// Swaps blocks at (x, y) and (x+1, y)
 ```
 
 ---
