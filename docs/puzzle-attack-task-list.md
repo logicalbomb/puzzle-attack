@@ -403,29 +403,63 @@ bool ApplyGravity(GameBoard* board, GravityAnimation* anim);
 
 ---
 
-### PHYS-002: Board Refill
-**Description:** Generate new blocks at the top after gravity settles
+### PHYS-002: Empty Space Swapping
+**Description:** Allow swapping blocks into empty spaces with gravity
 
-**Context:** After blocks fall, top of board has empty spaces.
+**Context:** Players should be able to swap a block into an empty space, then gravity makes it fall.
 
 **Requirements:**
-- For each empty cell in top row, generate random block
-- New blocks should "spawn" above board and fall in
-- Animate entry
-- Use same random generation as initialization
+- Allow swapping a block with an empty space
+- After swap, apply gravity so the block falls into place
+- Empty spaces can be on either side of the cursor
+- Swap animation still plays for the moving block
 
 **Success Criteria:**
-- Board is always full (no persistent empty spaces)
-- New blocks match color palette
-- Smooth spawn animation
-- Randomized block types
+- Can swap block into empty space above it
+- Block falls after swap completes
+- Smooth animation for swap + fall sequence
+- Works in both directions (left block or right block can be empty)
 
 **Files to Modify:**
-- `src/shared/physics.c`
+- `src/shared/game_logic.c`
+- `src/main.c`
 
 **Function:**
 ```c
-void RefillBoard(GameBoard* board);
+// SwapBlocks already handles this - just need to allow empty swaps
+bool SwapBlocks(GameBoard* board, int x, int y);
+```
+
+---
+
+### PHYS-003: Row Rise System
+**Description:** Raise the board by adding a new row from the bottom
+
+**Context:** In Panel de Pon style games, new rows rise from below to keep pressure on the player.
+
+**Requirements:**
+- When either SHIFT key is pressed, raise the board by one row
+- Generate a new row of random blocks at the bottom
+- All existing blocks move up one row
+- Ensure new row doesn't create immediate matches
+- If top row has blocks, game over (to be handled in GAME-005)
+
+**Success Criteria:**
+- SHIFT key raises board by one row
+- New random blocks appear at bottom
+- All blocks shift up smoothly
+- No instant matches in new row
+- Can be triggered repeatedly
+
+**Files to Create/Modify:**
+- `src/shared/physics.c`
+- `include/physics.h`
+- `src/main.c`
+
+**Function:**
+```c
+bool RaiseBoard(GameBoard* board);
+// Returns: false if board is full (game over condition)
 ```
 
 ---

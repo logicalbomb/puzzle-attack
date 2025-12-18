@@ -92,10 +92,16 @@ This release plan breaks down your Puzzle Attack project into 4 major phases ali
   - Falling animation
   - Multiple blocks can fall simultaneously
 
-- [ ] **PHYS-002**: Implement board refill
-  - Generate new blocks at top
-  - Ensure new blocks don't create unintentional matches
-  - Smooth entry animation
+- [ ] **PHYS-002**: Empty space swapping
+  - Allow swapping blocks into empty spaces
+  - Apply gravity after swap so block falls into place
+  - Works in both directions
+
+- [ ] **PHYS-003**: Row rise system
+  - SHIFT key raises board by one row
+  - New random blocks generated at bottom
+  - All blocks shift up
+  - No instant matches in new row
 
 - [ ] **GAME-004**: Implement cascade/combo system
   - Detect new matches after gravity settles
