@@ -208,6 +208,115 @@ void Renderer_DrawBoardWithSwap(const GameBoard* board, int offsetX, int offsetY
     DrawRectangleLines(offsetX, offsetY, BOARD_PIXEL_WIDTH, BOARD_PIXEL_HEIGHT, WHITE);
 }
 
+// Helper to check if a block is being animated by gravity
+static bool IsBlockFalling(const GravityAnimation* gravityAnim, int x, int y)
+{
+    if (!gravityAnim || !gravityAnim->active) {
+        return false;
+    }
+    for (int i = 0; i < gravityAnim->count; i++) {
+        if (gravityAnim->blocks[i].x == x && gravityAnim->blocks[i].y == y) {
+            return true;
+        }
+    }
+    return false;
+}
+
+void Renderer_DrawBoardWithAnimations(const GameBoard* board, int offsetX, int offsetY,
+                                       const SwapAnimation* swapAnim,
+                                       const GravityAnimation* gravityAnim)
+{
+    // Draw background
+    DrawRectangle(offsetX, offsetY, BOARD_PIXEL_WIDTH, BOARD_PIXEL_HEIGHT, DARKGRAY);
+
+    // Draw grid lines
+    for (int x = 0; x <= BOARD_WIDTH; x++) {
+        int lineX = offsetX + (x * BLOCK_SIZE);
+        DrawLine(lineX, offsetY, lineX, offsetY + BOARD_PIXEL_HEIGHT, GRAY);
+    }
+    for (int y = 0; y <= BOARD_HEIGHT; y++) {
+        int lineY = offsetY + (y * BLOCK_SIZE);
+        DrawLine(offsetX, lineY, offsetX + BOARD_PIXEL_WIDTH, lineY, GRAY);
+    }
+
+    // Draw blocks (skip animated blocks)
+    for (int y = 0; y < BOARD_HEIGHT; y++) {
+        for (int x = 0; x < BOARD_WIDTH; x++) {
+            // Skip blocks being swap-animated
+            if (swapAnim->active && y == swapAnim->y &&
+                (x == swapAnim->x || x == swapAnim->x + 1)) {
+                continue;
+            }
+
+            // Skip blocks being gravity-animated
+            if (IsBlockFalling(gravityAnim, x, y)) {
+                continue;
+            }
+
+            uint16_t cell = board->grid[GRID_INDEX(x, y)];
+            BlockType type = BLOCK_TYPE(cell);
+            BlockState state = BLOCK_STATE(cell);
+            int pixelX = offsetX + (x * BLOCK_SIZE);
+            int pixelY = offsetY + (y * BLOCK_SIZE);
+            DrawBlockWithState(type, state, pixelX, pixelY);
+        }
+    }
+
+    // Draw swap-animated blocks
+    if (swapAnim->active) {
+        int leftGridX = swapAnim->x;
+        int rightGridX = swapAnim->x + 1;
+        int gridY = swapAnim->y;
+
+        BlockType leftType = BLOCK_TYPE(board->grid[GRID_INDEX(leftGridX, gridY)]);
+        BlockType rightType = BLOCK_TYPE(board->grid[GRID_INDEX(rightGridX, gridY)]);
+
+        float animOffset = (1.0f - swapAnim->progress) * BLOCK_SIZE;
+
+        int leftPixelX = offsetX + (leftGridX * BLOCK_SIZE) + (int)animOffset;
+        int leftPixelY = offsetY + (gridY * BLOCK_SIZE);
+        Renderer_DrawBlockAtPixel(leftType, leftPixelX, leftPixelY);
+
+        int rightPixelX = offsetX + (rightGridX * BLOCK_SIZE) - (int)animOffset;
+        int rightPixelY = offsetY + (gridY * BLOCK_SIZE);
+        Renderer_DrawBlockAtPixel(rightType, rightPixelX, rightPixelY);
+    }
+
+    // Draw gravity-animated blocks
+    if (gravityAnim && gravityAnim->active) {
+        for (int i = 0; i < gravityAnim->count; i++) {
+            int x = gravityAnim->blocks[i].x;
+            int y = gravityAnim->blocks[i].y;
+            int fallDist = gravityAnim->blocks[i].fallDistance;
+
+            uint16_t cell = board->grid[GRID_INDEX(x, y)];
+            BlockType type = BLOCK_TYPE(cell);
+
+            // Calculate animated position (falling from above)
+            float remainingFall = (1.0f - gravityAnim->progress) * fallDist * BLOCK_SIZE;
+            int pixelX = offsetX + (x * BLOCK_SIZE);
+            int pixelY = offsetY + (y * BLOCK_SIZE) - (int)remainingFall;
+
+            Renderer_DrawBlockAtPixel(type, pixelX, pixelY);
+        }
+    }
+
+    // Draw grid coordinates (for debugging)
+    for (int x = 0; x < BOARD_WIDTH; x++) {
+        int pixelX = offsetX + (x * BLOCK_SIZE) + (BLOCK_SIZE / 2) - 4;
+        int pixelY = offsetY + BOARD_PIXEL_HEIGHT + 5;
+        DrawText(TextFormat("%d", x), pixelX, pixelY, 10, LIGHTGRAY);
+    }
+    for (int y = 0; y < BOARD_HEIGHT; y++) {
+        int pixelX = offsetX - 15;
+        int pixelY = offsetY + (y * BLOCK_SIZE) + (BLOCK_SIZE / 2) - 5;
+        DrawText(TextFormat("%d", y), pixelX, pixelY, 10, LIGHTGRAY);
+    }
+
+    // Draw board outline
+    DrawRectangleLines(offsetX, offsetY, BOARD_PIXEL_WIDTH, BOARD_PIXEL_HEIGHT, WHITE);
+}
+
 int Renderer_GetCenteredOffsetX(void)
 {
     return (WINDOW_WIDTH - BOARD_PIXEL_WIDTH) / 2;

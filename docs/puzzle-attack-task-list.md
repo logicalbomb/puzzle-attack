@@ -371,7 +371,7 @@ int ClearMatches(GameBoard* board);
 
 ---
 
-### PHYS-001: Gravity System
+### PHYS-001: Gravity System ✅ COMPLETED
 **Description:** Make blocks fall down to fill empty spaces
 
 **Context:** After clearing, blocks above should fall.
@@ -381,13 +381,14 @@ int ClearMatches(GameBoard* board);
 - For each empty space, move block above it down
 - Continue until no empty spaces have blocks above
 - Animate falling (blocks smoothly drop)
-- Set falling blocks to FALLING state during animation
+- Track falling blocks for animation
 
 **Success Criteria:**
 - All blocks settle to bottom
 - No floating blocks
 - Smooth animation (blocks fall at constant speed)
 - Multiple blocks can fall simultaneously
+- Cascading matches detected after gravity settles
 
 **Files:**
 - `src/shared/physics.c`
@@ -395,7 +396,8 @@ int ClearMatches(GameBoard* board);
 
 **Function:**
 ```c
-bool ApplyGravity(GameBoard* board);
+bool ApplyGravity(GameBoard* board, GravityAnimation* anim);
+// Populates animation with falling block info
 // Returns: true if any blocks moved
 ```
 

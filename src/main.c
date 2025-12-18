@@ -2,6 +2,7 @@
 #include "game_board.h"
 #include "game_logic.h"
 #include "match_detection.h"
+#include "physics.h"
 #include "renderer.h"
 #include "input.h"
 
@@ -22,6 +23,10 @@ int main(void)
     // Initialize swap animation
     SwapAnimation swapAnim;
     SwapAnimation_Init(&swapAnim);
+
+    // Initialize gravity animation
+    GravityAnimation gravityAnim;
+    GravityAnimation_Init(&gravityAnim);
 
     // Track match/clear state
     int lastMatchCount = 0;
@@ -46,7 +51,7 @@ int main(void)
         Cursor_HandleInput(&cursor);
 
         // Handle swap input (only when not animating)
-        if (!swapAnim.active && Input_SwapPressed()) {
+        if (!swapAnim.active && !gravityAnim.active && Input_SwapPressed()) {
             if (SwapBlocks(&board, cursor.x, cursor.y)) {
                 SwapAnimation_Start(&swapAnim, cursor.x, cursor.y);
             }
@@ -55,8 +60,20 @@ int main(void)
         // Update swap animation
         bool swapCompleted = SwapAnimation_Update(&swapAnim, deltaTime);
 
+        // Update gravity animation
+        bool gravityCompleted = GravityAnimation_Update(&gravityAnim, deltaTime);
+
         // Check for matches after swap completes
         if (swapCompleted) {
+            lastMatchCount = DetectMatches(&board);
+            if (lastMatchCount > 0) {
+                waitingToClear = true;
+                clearTimer = CLEAR_DELAY;
+            }
+        }
+
+        // Check for matches after gravity completes (cascade)
+        if (gravityCompleted) {
             lastMatchCount = DetectMatches(&board);
             if (lastMatchCount > 0) {
                 waitingToClear = true;
@@ -70,6 +87,9 @@ int main(void)
             if (clearTimer <= 0.0f) {
                 lastClearCount = ClearMatches(&board);
                 waitingToClear = false;
+
+                // Apply gravity after clearing
+                ApplyGravity(&board, &gravityAnim);
             }
         }
 
@@ -77,8 +97,8 @@ int main(void)
         BeginDrawing();
         ClearBackground(BLACK);
 
-        // Draw the game board with swap animation
-        Renderer_DrawBoardWithSwap(&board, boardX, boardY, &swapAnim);
+        // Draw the game board with all animations
+        Renderer_DrawBoardWithAnimations(&board, boardX, boardY, &swapAnim, &gravityAnim);
 
         // Draw cursor
         Renderer_DrawCursor(cursor.x, cursor.y, boardX, boardY);

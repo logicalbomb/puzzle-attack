@@ -3,6 +3,7 @@
 
 #include "game_board.h"
 #include "game_logic.h"
+#include "physics.h"
 
 // Rendering constants
 #define BLOCK_SIZE 48
@@ -22,6 +23,11 @@ void Renderer_DrawBoard(const GameBoard* board, int offsetX, int offsetY);
 // Render the game board with swap animation
 void Renderer_DrawBoardWithSwap(const GameBoard* board, int offsetX, int offsetY,
                                  const SwapAnimation* swapAnim);
+
+// Render the game board with all animations (swap and gravity)
+void Renderer_DrawBoardWithAnimations(const GameBoard* board, int offsetX, int offsetY,
+                                       const SwapAnimation* swapAnim,
+                                       const GravityAnimation* gravityAnim);
 
 // Render a single block at grid position
 void Renderer_DrawBlock(BlockType type, int gridX, int gridY, int offsetX, int offsetY);

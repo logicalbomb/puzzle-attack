@@ -87,7 +87,7 @@ This release plan breaks down your Puzzle Attack project into 4 major phases ali
   - Score calculation based on match size
 
 ### Milestone 1.4: Gravity & Refill (Week 5)
-- [ ] **PHYS-001**: Implement gravity system
+- [x] **PHYS-001**: Implement gravity system
   - Blocks fall to fill empty spaces
   - Falling animation
   - Multiple blocks can fall simultaneously
