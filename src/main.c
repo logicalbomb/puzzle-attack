@@ -5,6 +5,9 @@
 #include "renderer.h"
 #include "input.h"
 
+// Clear animation timing
+static const float CLEAR_DELAY = 0.3f;  // Time to show matched blocks before clearing
+
 int main(void)
 {
     // Initialize game board with random blocks
@@ -20,8 +23,11 @@ int main(void)
     SwapAnimation swapAnim;
     SwapAnimation_Init(&swapAnim);
 
-    // Track last match count for display
+    // Track match/clear state
     int lastMatchCount = 0;
+    int lastClearCount = 0;
+    float clearTimer = 0.0f;
+    bool waitingToClear = false;
 
     // Initialize window
     InitWindow(WINDOW_WIDTH, WINDOW_HEIGHT, "Puzzle Attack");
@@ -41,8 +47,9 @@ int main(void)
 
         // Handle swap input (only when not animating)
         if (!swapAnim.active && Input_SwapPressed()) {
-            SwapBlocks(&board, cursor.x, cursor.y);
-            SwapAnimation_Start(&swapAnim, cursor.x, cursor.y);
+            if (SwapBlocks(&board, cursor.x, cursor.y)) {
+                SwapAnimation_Start(&swapAnim, cursor.x, cursor.y);
+            }
         }
 
         // Update swap animation
@@ -51,6 +58,19 @@ int main(void)
         // Check for matches after swap completes
         if (swapCompleted) {
             lastMatchCount = DetectMatches(&board);
+            if (lastMatchCount > 0) {
+                waitingToClear = true;
+                clearTimer = CLEAR_DELAY;
+            }
+        }
+
+        // Update clear timer and clear matches when ready
+        if (waitingToClear) {
+            clearTimer -= deltaTime;
+            if (clearTimer <= 0.0f) {
+                lastClearCount = ClearMatches(&board);
+                waitingToClear = false;
+            }
         }
 
         // Rendering
@@ -66,9 +86,14 @@ int main(void)
         // Draw UI text
         DrawText("Puzzle Attack", 10, 10, 20, WHITE);
         DrawText("Arrow keys: move | SPACE: swap", 10, 35, 16, GRAY);
-        if (lastMatchCount > 0) {
-            DrawText(TextFormat("Matched: %d blocks", lastMatchCount), 10, 55, 16, GREEN);
+        DrawText(TextFormat("Score: %d", board.score), 10, 60, 20, YELLOW);
+
+        if (waitingToClear && lastMatchCount > 0) {
+            DrawText(TextFormat("Matched: %d blocks!", lastMatchCount), 10, 85, 16, GREEN);
+        } else if (lastClearCount > 0) {
+            DrawText(TextFormat("Cleared: %d blocks", lastClearCount), 10, 85, 16, LIME);
         }
+
         DrawFPS(WINDOW_WIDTH - 80, 10);
 
         EndDrawing();

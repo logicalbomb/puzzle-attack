@@ -280,15 +280,17 @@ typedef struct {
 **Requirements:**
 - Press SPACE to swap the two blocks under the cursor
 - Cursor position determines which blocks are swapped: (x, y) and (x+1, y)
-- Swap always succeeds (no swap-back if no match is created)
+- Swap persists (no swap-back if no match is created)
+- Blocks in STATE_MATCHED cannot be swapped
 - Animate swap (blocks slide to new positions)
-- Only one swap can happen at a time
+- Only one swap animation can happen at a time
 
 **Success Criteria:**
 - Blocks swap smoothly when SPACE is pressed
-- Swap animation takes ~0.2 seconds
+- Swap animation takes ~0.15 seconds
 - Board state updates correctly
 - Swaps persist regardless of whether a match occurs
+- Matched blocks are not swappable (swap is rejected)
 
 **Files to Modify:**
 - `src/client/input.c`
@@ -296,8 +298,9 @@ typedef struct {
 
 **Function:**
 ```c
-void SwapBlocks(GameBoard* board, int x, int y);
+bool SwapBlocks(GameBoard* board, int x, int y);
 // Swaps blocks at (x, y) and (x+1, y)
+// Returns true if swap succeeded, false if blocked (e.g., matched blocks)
 ```
 
 ---
@@ -339,7 +342,7 @@ int DetectMatches(GameBoard* board);
 
 ---
 
-### MATCH-002: Block Clearing
+### MATCH-002: Block Clearing ✅ COMPLETED
 **Description:** Remove matched blocks from the board
 
 **Context:** After detecting matches, we need to clear them.
@@ -347,14 +350,14 @@ int DetectMatches(GameBoard* board);
 **Requirements:**
 - Find all blocks with MATCHED state
 - Set their type to BLOCK_EMPTY
-- Add to score (3-match = 30 pts, 4-match = 50 pts, 5-match = 100 pts)
-- Optional: flash animation before clearing
+- Add to score (10 pts per block, +20 bonus for 4+ blocks, +50 bonus for 5+ blocks)
+- Flash animation before clearing (0.3 second delay to show matched state)
 - Play match sound effect (if audio implemented)
 
 **Success Criteria:**
-- Matched blocks disappear
+- Matched blocks disappear after brief delay
 - Score increases correctly
-- Visual feedback shows which blocks were cleared
+- Visual feedback shows which blocks were cleared (white overlay)
 - Board state is consistent
 
 **Files to Modify:**
@@ -362,7 +365,8 @@ int DetectMatches(GameBoard* board);
 
 **Function:**
 ```c
-void ClearMatches(GameBoard* board);
+int ClearMatches(GameBoard* board);
+// Returns number of blocks cleared
 ```
 
 ---

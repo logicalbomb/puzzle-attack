@@ -81,7 +81,7 @@ This release plan breaks down your Puzzle Attack project into 4 major phases ali
   - Vertical match detection (3+ same color)
   - Handle multiple simultaneous matches
 
-- [ ] **MATCH-002**: Implement block clearing
+- [x] **MATCH-002**: Implement block clearing
   - Remove matched blocks from board
   - Visual feedback for matches (flash/animation)
   - Score calculation based on match size

@@ -24,6 +24,17 @@ bool SwapAnimation_Update(SwapAnimation* anim, float deltaTime);
 
 // Swap the two blocks at cursor position
 // Swaps blocks at (x, y) and (x+1, y)
-void SwapBlocks(GameBoard* board, int x, int y);
+// Returns true if swap succeeded, false if blocked (e.g., matched blocks)
+bool SwapBlocks(GameBoard* board, int x, int y);
+
+// Scoring constants
+#define SCORE_PER_BLOCK 10
+#define SCORE_BONUS_4_MATCH 20
+#define SCORE_BONUS_5_PLUS_MATCH 50
+
+// Clear all blocks marked as MATCHED
+// Sets them to BLOCK_EMPTY and adds to score
+// Returns the number of blocks cleared
+int ClearMatches(GameBoard* board);
 
 #endif // GAME_LOGIC_H
