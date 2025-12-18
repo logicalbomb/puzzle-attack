@@ -272,7 +272,7 @@ typedef struct {
 
 ---
 
-### INPUT-002: Block Swapping
+### INPUT-002: Block Swapping ✅ COMPLETED
 **Description:** Allow player to swap the two blocks under the cursor
 
 **Context:** Core mechanic of match-3 games. The cursor covers two horizontal blocks.

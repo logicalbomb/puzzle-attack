@@ -43,3 +43,8 @@ bool Cursor_HandleInput(Cursor* cursor)
 
     return moved;
 }
+
+bool Input_SwapPressed(void)
+{
+    return IsKeyPressed(KEY_SPACE);
+}

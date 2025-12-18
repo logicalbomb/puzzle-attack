@@ -70,7 +70,7 @@ This release plan breaks down your Puzzle Attack project into 4 major phases ali
   - Keyboard input (arrow keys to move)
   - Orange cursor with dark border for visibility
 
-- [ ] **INPUT-002**: Implement block swapping
+- [x] **INPUT-002**: Implement block swapping
   - SPACE key swaps the two blocks under cursor
   - Swap animation (smooth transition)
   - Swaps persist (no swap-back if no match)

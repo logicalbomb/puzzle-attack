@@ -15,26 +15,30 @@ static Color GetBlockColor(BlockType type)
     }
 }
 
-void Renderer_DrawBlock(BlockType type, int gridX, int gridY, int offsetX, int offsetY)
+static const int BLOCK_PADDING = 2;
+
+void Renderer_DrawBlockAtPixel(BlockType type, int pixelX, int pixelY)
 {
     if (type == BLOCK_EMPTY) {
         return;
     }
 
-    int pixelX = offsetX + (gridX * BLOCK_SIZE);
-    int pixelY = offsetY + (gridY * BLOCK_SIZE);
-
     Color color = GetBlockColor(type);
 
-    // Draw filled block with small padding for visual separation
-    int padding = 2;
     DrawRectangle(
-        pixelX + padding,
-        pixelY + padding,
-        BLOCK_SIZE - (padding * 2),
-        BLOCK_SIZE - (padding * 2),
+        pixelX + BLOCK_PADDING,
+        pixelY + BLOCK_PADDING,
+        BLOCK_SIZE - (BLOCK_PADDING * 2),
+        BLOCK_SIZE - (BLOCK_PADDING * 2),
         color
     );
+}
+
+void Renderer_DrawBlock(BlockType type, int gridX, int gridY, int offsetX, int offsetY)
+{
+    int pixelX = offsetX + (gridX * BLOCK_SIZE);
+    int pixelY = offsetY + (gridY * BLOCK_SIZE);
+    Renderer_DrawBlockAtPixel(type, pixelX, pixelY);
 }
 
 void Renderer_DrawBoard(const GameBoard* board, int offsetX, int offsetY)
@@ -65,6 +69,78 @@ void Renderer_DrawBoard(const GameBoard* board, int offsetX, int offsetY)
             BlockType type = BLOCK_TYPE(cell);
             Renderer_DrawBlock(type, x, y, offsetX, offsetY);
         }
+    }
+
+    // Draw grid coordinates (for debugging)
+    for (int x = 0; x < BOARD_WIDTH; x++) {
+        int pixelX = offsetX + (x * BLOCK_SIZE) + (BLOCK_SIZE / 2) - 4;
+        int pixelY = offsetY + BOARD_PIXEL_HEIGHT + 5;
+        DrawText(TextFormat("%d", x), pixelX, pixelY, 10, LIGHTGRAY);
+    }
+    for (int y = 0; y < BOARD_HEIGHT; y++) {
+        int pixelX = offsetX - 15;
+        int pixelY = offsetY + (y * BLOCK_SIZE) + (BLOCK_SIZE / 2) - 5;
+        DrawText(TextFormat("%d", y), pixelX, pixelY, 10, LIGHTGRAY);
+    }
+
+    // Draw board outline
+    DrawRectangleLines(offsetX, offsetY, BOARD_PIXEL_WIDTH, BOARD_PIXEL_HEIGHT, WHITE);
+}
+
+void Renderer_DrawBoardWithSwap(const GameBoard* board, int offsetX, int offsetY,
+                                 const SwapAnimation* swapAnim)
+{
+    // Draw background
+    DrawRectangle(offsetX, offsetY, BOARD_PIXEL_WIDTH, BOARD_PIXEL_HEIGHT, DARKGRAY);
+
+    // Draw grid lines
+    for (int x = 0; x <= BOARD_WIDTH; x++) {
+        int lineX = offsetX + (x * BLOCK_SIZE);
+        DrawLine(lineX, offsetY, lineX, offsetY + BOARD_PIXEL_HEIGHT, GRAY);
+    }
+    for (int y = 0; y <= BOARD_HEIGHT; y++) {
+        int lineY = offsetY + (y * BLOCK_SIZE);
+        DrawLine(offsetX, lineY, offsetX + BOARD_PIXEL_WIDTH, lineY, GRAY);
+    }
+
+    // Draw blocks (skip animated blocks if swap is active)
+    for (int y = 0; y < BOARD_HEIGHT; y++) {
+        for (int x = 0; x < BOARD_WIDTH; x++) {
+            // Skip blocks being animated
+            if (swapAnim->active && y == swapAnim->y &&
+                (x == swapAnim->x || x == swapAnim->x + 1)) {
+                continue;
+            }
+
+            uint16_t cell = board->grid[GRID_INDEX(x, y)];
+            BlockType type = BLOCK_TYPE(cell);
+            Renderer_DrawBlock(type, x, y, offsetX, offsetY);
+        }
+    }
+
+    // Draw animated blocks
+    if (swapAnim->active) {
+        int leftGridX = swapAnim->x;
+        int rightGridX = swapAnim->x + 1;
+        int gridY = swapAnim->y;
+
+        // Get block types (they've already been swapped in the board data)
+        // So the "left" position now contains what was on the right, and vice versa
+        BlockType leftType = BLOCK_TYPE(board->grid[GRID_INDEX(leftGridX, gridY)]);
+        BlockType rightType = BLOCK_TYPE(board->grid[GRID_INDEX(rightGridX, gridY)]);
+
+        // Calculate animation offset
+        float animOffset = (1.0f - swapAnim->progress) * BLOCK_SIZE;
+
+        // Left block (was right, moving left): starts from right, ends at left
+        int leftPixelX = offsetX + (leftGridX * BLOCK_SIZE) + (int)animOffset;
+        int leftPixelY = offsetY + (gridY * BLOCK_SIZE);
+        Renderer_DrawBlockAtPixel(leftType, leftPixelX, leftPixelY);
+
+        // Right block (was left, moving right): starts from left, ends at right
+        int rightPixelX = offsetX + (rightGridX * BLOCK_SIZE) - (int)animOffset;
+        int rightPixelY = offsetY + (gridY * BLOCK_SIZE);
+        Renderer_DrawBlockAtPixel(rightType, rightPixelX, rightPixelY);
     }
 
     // Draw grid coordinates (for debugging)

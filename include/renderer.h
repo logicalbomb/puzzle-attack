@@ -2,6 +2,7 @@
 #define RENDERER_H
 
 #include "game_board.h"
+#include "game_logic.h"
 
 // Rendering constants
 #define BLOCK_SIZE 48
@@ -18,8 +19,15 @@
 // Render the game board at the specified offset
 void Renderer_DrawBoard(const GameBoard* board, int offsetX, int offsetY);
 
+// Render the game board with swap animation
+void Renderer_DrawBoardWithSwap(const GameBoard* board, int offsetX, int offsetY,
+                                 const SwapAnimation* swapAnim);
+
 // Render a single block at grid position
 void Renderer_DrawBlock(BlockType type, int gridX, int gridY, int offsetX, int offsetY);
+
+// Render a single block at pixel position (for animation)
+void Renderer_DrawBlockAtPixel(BlockType type, int pixelX, int pixelY);
 
 // Calculate offset to center board in window
 int Renderer_GetCenteredOffsetX(void);

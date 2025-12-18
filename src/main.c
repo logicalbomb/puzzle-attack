@@ -1,5 +1,6 @@
 #include "raylib.h"
 #include "game_board.h"
+#include "game_logic.h"
 #include "renderer.h"
 #include "input.h"
 
@@ -14,6 +15,10 @@ int main(void)
     Cursor cursor;
     Cursor_Init(&cursor);
 
+    // Initialize swap animation
+    SwapAnimation swapAnim;
+    SwapAnimation_Init(&swapAnim);
+
     // Initialize window
     InitWindow(WINDOW_WIDTH, WINDOW_HEIGHT, "Puzzle Attack");
     SetTargetFPS(60);
@@ -25,22 +30,33 @@ int main(void)
     // Main game loop
     while (!WindowShouldClose())
     {
-        // Handle input
+        float deltaTime = GetFrameTime();
+
+        // Handle cursor movement (always allowed)
         Cursor_HandleInput(&cursor);
+
+        // Handle swap input (only when not animating)
+        if (!swapAnim.active && Input_SwapPressed()) {
+            SwapBlocks(&board, cursor.x, cursor.y);
+            SwapAnimation_Start(&swapAnim, cursor.x, cursor.y);
+        }
+
+        // Update swap animation
+        SwapAnimation_Update(&swapAnim, deltaTime);
 
         // Rendering
         BeginDrawing();
         ClearBackground(BLACK);
 
-        // Draw the game board
-        Renderer_DrawBoard(&board, boardX, boardY);
+        // Draw the game board with swap animation
+        Renderer_DrawBoardWithSwap(&board, boardX, boardY, &swapAnim);
 
         // Draw cursor
         Renderer_DrawCursor(cursor.x, cursor.y, boardX, boardY);
 
         // Draw UI text
         DrawText("Puzzle Attack", 10, 10, 20, WHITE);
-        DrawText("Arrow keys to move cursor", 10, 35, 16, GRAY);
+        DrawText("Arrow keys: move | SPACE: swap", 10, 35, 16, GRAY);
         DrawFPS(WINDOW_WIDTH - 80, 10);
 
         EndDrawing();

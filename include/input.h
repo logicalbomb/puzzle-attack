@@ -19,4 +19,7 @@ bool Cursor_HandleInput(Cursor* cursor);
 // Clamp cursor to valid board position
 void Cursor_Clamp(Cursor* cursor);
 
+// Check if swap key (SPACE) was pressed
+bool Input_SwapPressed(void);
+
 #endif // INPUT_H
