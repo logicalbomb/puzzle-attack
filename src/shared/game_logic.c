@@ -50,6 +50,11 @@ bool SwapBlocks(GameBoard* board, int x, int y)
         return false;
     }
 
+    // Cannot swap two empty spaces (pointless)
+    if (BLOCK_TYPE(left) == BLOCK_EMPTY && BLOCK_TYPE(right) == BLOCK_EMPTY) {
+        return false;
+    }
+
     GameBoard_SetCell(board, x, y, right);
     GameBoard_SetCell(board, x + 1, y, left);
     return true;

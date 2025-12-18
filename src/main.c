@@ -69,6 +69,9 @@ int main(void)
             if (lastMatchCount > 0) {
                 waitingToClear = true;
                 clearTimer = CLEAR_DELAY;
+            } else {
+                // No matches - apply gravity (handles swapping into empty space)
+                ApplyGravity(&board, &gravityAnim);
             }
         }
 

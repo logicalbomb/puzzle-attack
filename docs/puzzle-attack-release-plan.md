@@ -92,7 +92,7 @@ This release plan breaks down your Puzzle Attack project into 4 major phases ali
   - Falling animation
   - Multiple blocks can fall simultaneously
 
-- [ ] **PHYS-002**: Empty space swapping
+- [x] **PHYS-002**: Empty space swapping
   - Allow swapping blocks into empty spaces
   - Apply gravity after swap so block falls into place
   - Works in both directions

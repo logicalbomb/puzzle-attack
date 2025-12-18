@@ -403,7 +403,7 @@ bool ApplyGravity(GameBoard* board, GravityAnimation* anim);
 
 ---
 
-### PHYS-002: Empty Space Swapping
+### PHYS-002: Empty Space Swapping ✅ COMPLETED
 **Description:** Allow swapping blocks into empty spaces with gravity
 
 **Context:** Players should be able to swap a block into an empty space, then gravity makes it fall.
@@ -413,6 +413,7 @@ bool ApplyGravity(GameBoard* board, GravityAnimation* anim);
 - After swap, apply gravity so the block falls into place
 - Empty spaces can be on either side of the cursor
 - Swap animation still plays for the moving block
+- Cannot swap two empty spaces (pointless)
 
 **Success Criteria:**
 - Can swap block into empty space above it
@@ -420,15 +421,14 @@ bool ApplyGravity(GameBoard* board, GravityAnimation* anim);
 - Smooth animation for swap + fall sequence
 - Works in both directions (left block or right block can be empty)
 
-**Files to Modify:**
-- `src/shared/game_logic.c`
-- `src/main.c`
+**Files Modified:**
+- `src/shared/game_logic.c` - Added check to reject two-empty swaps
+- `src/main.c` - Apply gravity after swap if no matches found
 
-**Function:**
-```c
-// SwapBlocks already handles this - just need to allow empty swaps
-bool SwapBlocks(GameBoard* board, int x, int y);
-```
+**Implementation:**
+- SwapBlocks rejects swapping two empty spaces
+- After swap completes with no matches, gravity is applied
+- Block falls into place with existing gravity animation
 
 ---
 
