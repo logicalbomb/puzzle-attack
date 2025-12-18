@@ -76,7 +76,7 @@ This release plan breaks down your Puzzle Attack project into 4 major phases ali
   - Swaps persist (no swap-back if no match)
 
 ### Milestone 1.3: Match Detection & Clearing (Week 4)
-- [ ] **MATCH-001**: Implement match detection algorithm
+- [x] **MATCH-001**: Implement match detection algorithm
   - Horizontal match detection (3+ same color)
   - Vertical match detection (3+ same color)
   - Handle multiple simultaneous matches

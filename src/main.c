@@ -1,6 +1,7 @@
 #include "raylib.h"
 #include "game_board.h"
 #include "game_logic.h"
+#include "match_detection.h"
 #include "renderer.h"
 #include "input.h"
 
@@ -18,6 +19,9 @@ int main(void)
     // Initialize swap animation
     SwapAnimation swapAnim;
     SwapAnimation_Init(&swapAnim);
+
+    // Track last match count for display
+    int lastMatchCount = 0;
 
     // Initialize window
     InitWindow(WINDOW_WIDTH, WINDOW_HEIGHT, "Puzzle Attack");
@@ -42,7 +46,12 @@ int main(void)
         }
 
         // Update swap animation
-        SwapAnimation_Update(&swapAnim, deltaTime);
+        bool swapCompleted = SwapAnimation_Update(&swapAnim, deltaTime);
+
+        // Check for matches after swap completes
+        if (swapCompleted) {
+            lastMatchCount = DetectMatches(&board);
+        }
 
         // Rendering
         BeginDrawing();
@@ -57,6 +66,9 @@ int main(void)
         // Draw UI text
         DrawText("Puzzle Attack", 10, 10, 20, WHITE);
         DrawText("Arrow keys: move | SPACE: swap", 10, 35, 16, GRAY);
+        if (lastMatchCount > 0) {
+            DrawText(TextFormat("Matched: %d blocks", lastMatchCount), 10, 55, 16, GREEN);
+        }
         DrawFPS(WINDOW_WIDTH - 80, 10);
 
         EndDrawing();

@@ -302,7 +302,7 @@ void SwapBlocks(GameBoard* board, int x, int y);
 
 ---
 
-### MATCH-001: Match Detection
+### MATCH-001: Match Detection ✅ COMPLETED
 **Description:** Detect when 3+ blocks of same color align
 
 **Context:** Essential game mechanic - clearing matches.
@@ -333,7 +333,8 @@ int DetectMatches(GameBoard* board);
 **Algorithm:**
 - Scan each row for consecutive same-color blocks
 - Scan each column for consecutive same-color blocks
-- Mark all matched blocks
+- Mark all matched blocks with STATE_MATCHED
+- Use bitmask array (uint8_t[CEIL_DIV(BOARD_SIZE, 8)]) to track counted blocks and avoid double-counting L/T shapes
 - Return total count
 
 ---

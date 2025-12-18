@@ -34,6 +34,52 @@ void Renderer_DrawBlockAtPixel(BlockType type, int pixelX, int pixelY)
     );
 }
 
+// Draw a block with state-based rendering (e.g., matched blocks flash white)
+static void DrawBlockWithState(BlockType type, BlockState state, int pixelX, int pixelY)
+{
+    if (type == BLOCK_EMPTY) {
+        return;
+    }
+
+    Color color = GetBlockColor(type);
+
+    // Matched blocks get a white overlay
+    if (state == STATE_MATCHED) {
+        // Draw base color
+        DrawRectangle(
+            pixelX + BLOCK_PADDING,
+            pixelY + BLOCK_PADDING,
+            BLOCK_SIZE - (BLOCK_PADDING * 2),
+            BLOCK_SIZE - (BLOCK_PADDING * 2),
+            color
+        );
+        // Draw white overlay with transparency
+        DrawRectangle(
+            pixelX + BLOCK_PADDING,
+            pixelY + BLOCK_PADDING,
+            BLOCK_SIZE - (BLOCK_PADDING * 2),
+            BLOCK_SIZE - (BLOCK_PADDING * 2),
+            (Color){ 255, 255, 255, 150 }
+        );
+        // Draw white border to highlight
+        DrawRectangleLines(
+            pixelX + BLOCK_PADDING,
+            pixelY + BLOCK_PADDING,
+            BLOCK_SIZE - (BLOCK_PADDING * 2),
+            BLOCK_SIZE - (BLOCK_PADDING * 2),
+            WHITE
+        );
+    } else {
+        DrawRectangle(
+            pixelX + BLOCK_PADDING,
+            pixelY + BLOCK_PADDING,
+            BLOCK_SIZE - (BLOCK_PADDING * 2),
+            BLOCK_SIZE - (BLOCK_PADDING * 2),
+            color
+        );
+    }
+}
+
 void Renderer_DrawBlock(BlockType type, int gridX, int gridY, int offsetX, int offsetY)
 {
     int pixelX = offsetX + (gridX * BLOCK_SIZE);
@@ -114,7 +160,10 @@ void Renderer_DrawBoardWithSwap(const GameBoard* board, int offsetX, int offsetY
 
             uint16_t cell = board->grid[GRID_INDEX(x, y)];
             BlockType type = BLOCK_TYPE(cell);
-            Renderer_DrawBlock(type, x, y, offsetX, offsetY);
+            BlockState state = BLOCK_STATE(cell);
+            int pixelX = offsetX + (x * BLOCK_SIZE);
+            int pixelY = offsetY + (y * BLOCK_SIZE);
+            DrawBlockWithState(type, state, pixelX, pixelY);
         }
     }
 
