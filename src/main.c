@@ -15,12 +15,15 @@ static const float CLEAR_DELAY = 0.3f;  // Time to show matched blocks before cl
 static const float GAME_OVER_COUNTDOWN = 5.0f;  // Total countdown time
 static const float MATCH_PAUSE_DURATION = 0.2f; // Pause countdown when match detected
 
+// Auto-rise settings
+static const float AUTO_RISE_INTERVAL = 7.0f;  // Time between auto-rises
+
 // Helper to reset game state for new game
 static void ResetGame(GameBoard* board, Cursor* cursor, SwapAnimation* swapAnim,
                       GravityAnimation* gravityAnim, RiseAnimation* riseAnim,
                       int* comboCount, float* clearTimer, bool* waitingToClear,
                       float* gameOverTimer, float* matchPauseTimer,
-                      UIState* ui)
+                      float* autoRiseTimer, UIState* ui)
 {
     GameBoard_Init(board);
     GameBoard_FillRandom(board);
@@ -33,6 +36,7 @@ static void ResetGame(GameBoard* board, Cursor* cursor, SwapAnimation* swapAnim,
     *waitingToClear = false;
     *gameOverTimer = 0.0f;
     *matchPauseTimer = 0.0f;
+    *autoRiseTimer = AUTO_RISE_INTERVAL;
     ui->displayCombo = 0;
     ui->lastClearCount = 0;
     ui->showingMatch = false;
@@ -82,6 +86,9 @@ int main(void)
     float gameOverTimer = 0.0f;   // Countdown to game over (0 = not counting)
     float matchPauseTimer = 0.0f; // Pause countdown when match detected
 
+    // Auto-rise timer
+    float autoRiseTimer = AUTO_RISE_INTERVAL;
+
     // Initialize window
     InitWindow(WINDOW_WIDTH, WINDOW_HEIGHT, "Puzzle Attack");
     SetTargetFPS(60);
@@ -104,7 +111,7 @@ int main(void)
                 // Starting new game from menu or restart from game over
                 ResetGame(&board, &cursor, &swapAnim, &gravityAnim, &riseAnim,
                          &comboCount, &clearTimer, &waitingToClear,
-                         &gameOverTimer, &matchPauseTimer, &ui);
+                         &gameOverTimer, &matchPauseTimer, &autoRiseTimer, &ui);
             }
             gameState = newState;
         }
@@ -234,6 +241,19 @@ int main(void)
                 // Top row clear - reset countdown
                 gameOverTimer = 0.0f;
                 matchPauseTimer = 0.0f;
+            }
+
+            // Auto-rise logic (works even during game over countdown)
+            bool canAutoRise = !swapAnim.active && !gravityAnim.active && !riseAnim.active && !waitingToClear;
+            if (canAutoRise) {
+                // Pause auto-rise timer when match pause is active
+                if (matchPauseTimer <= 0.0f) {
+                    autoRiseTimer -= deltaTime;
+                    if (autoRiseTimer <= 0.0f) {
+                        RaiseBoard(&board, &riseAnim);
+                        autoRiseTimer = AUTO_RISE_INTERVAL;
+                    }
+                }
             }
         }
 

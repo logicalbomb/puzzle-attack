@@ -616,7 +616,7 @@ while (matchesExist) {
 
 ---
 
-### PHYS-004: Auto-Rise System
+### PHYS-004: Auto-Rise System ✅ COMPLETED
 **Description:** Implement automatic board rising on a timer
 
 **Context:** Adds pressure to gameplay by forcing the board to rise periodically, independent of player input.
@@ -644,6 +644,14 @@ while (matchesExist) {
 - Use same RaiseBoard function as manual raise
 - Share MATCH_PAUSE_DURATION constant with game over countdown
 - Check for game over after auto-rise (top row filled triggers countdown)
+
+**Implementation:**
+- Added AUTO_RISE_INTERVAL constant (7.0f seconds)
+- Added autoRiseTimer variable, reset in ResetGame
+- Timer decrements each frame when not animating
+- Timer pauses when matchPauseTimer > 0 (match detected)
+- Triggers RaiseBoard and resets timer when reaches 0
+- Works during game over countdown (unlike manual raise)
 
 ---
 
