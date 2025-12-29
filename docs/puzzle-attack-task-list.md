@@ -526,7 +526,7 @@ while (matchesExist) {
 
 ---
 
-### UI-001: Score Display
+### UI-001: Score Display ✅ COMPLETED
 **Description:** Show score and combo counter on screen
 
 **Context:** Players need feedback on performance.
@@ -546,6 +546,12 @@ while (matchesExist) {
 **Files:**
 - `src/client/ui.c`
 - `include/ui.h`
+
+**Implementation:**
+- Created UIState struct to track displayCombo, lastClearCount, showingMatch, highScore
+- UI_Draw renders: title, controls, score (left), high score (right), combo (center)
+- High score updates after each clear via UI_UpdateHighScore
+- Combo only displays for cascades (2+)
 
 ---
 

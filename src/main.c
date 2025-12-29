@@ -5,6 +5,7 @@
 #include "physics.h"
 #include "renderer.h"
 #include "input.h"
+#include "ui.h"
 
 // Clear animation timing
 static const float CLEAR_DELAY = 0.3f;  // Time to show matched blocks before clearing
@@ -34,13 +35,15 @@ int main(void)
 
     // Track match/clear state
     int lastMatchCount = 0;
-    int lastClearCount = 0;
     float clearTimer = 0.0f;
     bool waitingToClear = false;
 
     // Combo tracking
     int comboCount = 0;
-    int displayCombo = 0;  // For UI display (persists briefly after combo ends)
+
+    // Initialize UI state
+    UIState ui;
+    UI_Init(&ui);
 
     // Initialize window
     InitWindow(WINDOW_WIDTH, WINDOW_HEIGHT, "Puzzle Attack");
@@ -94,7 +97,9 @@ int main(void)
             lastMatchCount = DetectMatches(&board);
             if (lastMatchCount > 0) {
                 comboCount = 1;  // Start new combo chain
-                displayCombo = 1;
+                ui.displayCombo = 1;
+                ui.lastClearCount = lastMatchCount;
+                ui.showingMatch = true;
                 waitingToClear = true;
                 clearTimer = CLEAR_DELAY;
             } else {
@@ -108,7 +113,9 @@ int main(void)
             lastMatchCount = DetectMatches(&board);
             if (lastMatchCount > 0) {
                 comboCount++;  // Increment combo for cascade
-                displayCombo = comboCount;
+                ui.displayCombo = comboCount;
+                ui.lastClearCount = lastMatchCount;
+                ui.showingMatch = true;
                 waitingToClear = true;
                 clearTimer = CLEAR_DELAY;
             } else {
@@ -122,7 +129,9 @@ int main(void)
             lastMatchCount = DetectMatches(&board);
             if (lastMatchCount > 0) {
                 comboCount = 1;  // Start new combo chain
-                displayCombo = 1;
+                ui.displayCombo = 1;
+                ui.lastClearCount = lastMatchCount;
+                ui.showingMatch = true;
                 waitingToClear = true;
                 clearTimer = CLEAR_DELAY;
             }
@@ -132,8 +141,12 @@ int main(void)
         if (waitingToClear) {
             clearTimer -= deltaTime;
             if (clearTimer <= 0.0f) {
-                lastClearCount = ClearMatches(&board, comboCount);
+                ui.lastClearCount = ClearMatches(&board, comboCount);
+                ui.showingMatch = false;
                 waitingToClear = false;
+
+                // Update high score
+                UI_UpdateHighScore(&ui, board.score);
 
                 // Apply gravity after clearing
                 ApplyGravity(&board, &gravityAnim);
@@ -150,23 +163,10 @@ int main(void)
         // Draw cursor
         Renderer_DrawCursor(cursor.x, cursor.y, boardX, boardY);
 
-        // Draw UI text
-        DrawText("Puzzle Attack", 10, 10, 20, WHITE);
-        DrawText("Arrow keys: move | SPACE: swap | SHIFT: raise", 10, 35, 16, GRAY);
-        DrawText(TextFormat("Score: %d", board.score), 10, 60, 20, YELLOW);
+        // Draw UI
+        UI_Draw(&ui, &board, WINDOW_WIDTH);
 
-        if (waitingToClear && lastMatchCount > 0) {
-            DrawText(TextFormat("Matched: %d blocks!", lastMatchCount), 10, 85, 16, GREEN);
-        } else if (lastClearCount > 0) {
-            DrawText(TextFormat("Cleared: %d blocks", lastClearCount), 10, 85, 16, LIME);
-        }
-
-        // Display combo (only show if 2+ for cascade)
-        if (displayCombo >= 2) {
-            DrawText(TextFormat("%dx COMBO!", displayCombo), 10, 110, 24, ORANGE);
-        }
-
-        DrawFPS(WINDOW_WIDTH - 80, 10);
+        DrawFPS(WINDOW_WIDTH - 80, 30);
 
         EndDrawing();
     }

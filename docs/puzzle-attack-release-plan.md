@@ -112,10 +112,10 @@ This release plan breaks down your Puzzle Attack project into 4 major phases ali
   - Combo multiplier for scoring (2x for combo 2, 3x for combo 3, etc.)
 
 ### Milestone 1.5: Game State & UI (Week 6)
-- [ ] **UI-001**: Implement score display
-  - Current score
-  - Combo counter
-  - Optional: high score tracking
+- [x] **UI-001**: Implement score display
+  - Current score (top-left)
+  - Combo counter (top-center)
+  - High score tracking (top-right)
 
 - [ ] **UI-002**: Implement game states
   - Menu state (Start/Quit)
