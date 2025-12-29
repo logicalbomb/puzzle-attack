@@ -282,6 +282,12 @@ typedef struct {
 - Cursor position determines which blocks are swapped: (x, y) and (x+1, y)
 - Swap persists (no swap-back if no match is created)
 - Blocks in STATE_MATCHED cannot be swapped
+- Blocks in STATE_FALLING cannot be swapped
+- Swaps allowed during match flash animation (non-matched blocks can swap while matches are clearing)
+- Swaps allowed during fall animation (stationary blocks can swap while other blocks fall elsewhere)
+- Can swap block into column with falling blocks if destination is above them; swapped block starts falling immediately
+- If swap creates match during fall animation, detect immediately
+- Block can be swapped before it starts falling (player beats gravity)
 - Animate swap (blocks slide to new positions)
 - Only one swap animation can happen at a time
 
@@ -291,6 +297,11 @@ typedef struct {
 - Board state updates correctly
 - Swaps persist regardless of whether a match occurs
 - Matched blocks are not swappable (swap is rejected)
+- Falling blocks are not swappable (swap is rejected)
+- Can swap stationary blocks while other blocks are falling
+- Can swap block into column above falling blocks; it starts falling immediately
+- Can swap non-matched blocks during match flash animation
+- Matches detected immediately during fall animation
 
 **Files to Modify:**
 - `src/client/input.c`
@@ -432,7 +443,7 @@ bool ApplyGravity(GameBoard* board, GravityAnimation* anim);
 
 ---
 
-### PHYS-003: Row Rise System
+### PHYS-003: Row Rise System ✅ COMPLETED
 **Description:** Raise the board by adding a new row from the bottom
 
 **Context:** In Panel de Pon style games, new rows rise from below to keep pressure on the player.
@@ -442,24 +453,29 @@ bool ApplyGravity(GameBoard* board, GravityAnimation* anim);
 - Generate a new row of random blocks at the bottom
 - All existing blocks move up one row
 - Ensure new row doesn't create immediate matches
-- If top row has blocks, game over (to be handled in GAME-005)
+- If top row has blocks, cannot raise (game over to be handled in GAME-005)
 
 **Success Criteria:**
 - SHIFT key raises board by one row
 - New random blocks appear at bottom
-- All blocks shift up smoothly
+- All blocks shift up smoothly with animation
 - No instant matches in new row
 - Can be triggered repeatedly
+- Matches detected after rise animation completes
 
-**Files to Create/Modify:**
-- `src/shared/physics.c`
-- `include/physics.h`
-- `src/main.c`
+**Files Modified:**
+- `include/physics.h` - Added RiseAnimation struct and function declarations
+- `src/shared/physics.c` - Implemented RaiseBoard and animation functions
+- `include/input.h` - Added Input_RaisePressed declaration
+- `src/client/input.c` - Implemented SHIFT key detection
+- `include/renderer.h` - Updated function signature for rise animation
+- `src/client/renderer.c` - Added rise animation rendering with scissor clipping
+- `src/main.c` - Integrated rise input handling and animation
 
 **Function:**
 ```c
-bool RaiseBoard(GameBoard* board);
-// Returns: false if board is full (game over condition)
+bool RaiseBoard(GameBoard* board, RiseAnimation* anim);
+// Returns: false if top row has blocks (game over condition)
 ```
 
 ---

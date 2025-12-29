@@ -22,4 +22,7 @@ void Cursor_Clamp(Cursor* cursor);
 // Check if swap key (SPACE) was pressed
 bool Input_SwapPressed(void);
 
+// Check if raise key (either SHIFT) was pressed
+bool Input_RaisePressed(void);
+
 #endif // INPUT_H

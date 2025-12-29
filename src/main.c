@@ -28,6 +28,10 @@ int main(void)
     GravityAnimation gravityAnim;
     GravityAnimation_Init(&gravityAnim);
 
+    // Initialize rise animation
+    RiseAnimation riseAnim;
+    RiseAnimation_Init(&riseAnim);
+
     // Track match/clear state
     int lastMatchCount = 0;
     int lastClearCount = 0;
@@ -50,11 +54,26 @@ int main(void)
         // Handle cursor movement (always allowed)
         Cursor_HandleInput(&cursor);
 
-        // Handle swap input (only when not animating)
-        if (!swapAnim.active && !gravityAnim.active && Input_SwapPressed()) {
-            if (SwapBlocks(&board, cursor.x, cursor.y)) {
-                SwapAnimation_Start(&swapAnim, cursor.x, cursor.y);
+        // Handle swap input
+        // Allowed during fall/clear animations, blocked during swap/rise animations
+        // Cannot swap blocks that are currently falling
+        bool canSwap = !swapAnim.active && !riseAnim.active;
+        if (canSwap && Input_SwapPressed()) {
+            // Check if either block under cursor is falling
+            bool leftFalling = GravityAnimation_IsBlockFalling(&gravityAnim, cursor.x, cursor.y);
+            bool rightFalling = GravityAnimation_IsBlockFalling(&gravityAnim, cursor.x + 1, cursor.y);
+
+            if (!leftFalling && !rightFalling) {
+                if (SwapBlocks(&board, cursor.x, cursor.y)) {
+                    SwapAnimation_Start(&swapAnim, cursor.x, cursor.y);
+                }
             }
+        }
+
+        // Handle raise input (only when not animating)
+        bool animating = swapAnim.active || gravityAnim.active || riseAnim.active || waitingToClear;
+        if (!animating && Input_RaisePressed()) {
+            RaiseBoard(&board, &riseAnim);
         }
 
         // Update swap animation
@@ -62,6 +81,9 @@ int main(void)
 
         // Update gravity animation
         bool gravityCompleted = GravityAnimation_Update(&gravityAnim, deltaTime);
+
+        // Update rise animation
+        bool riseCompleted = RiseAnimation_Update(&riseAnim, deltaTime);
 
         // Check for matches after swap completes
         if (swapCompleted) {
@@ -77,6 +99,15 @@ int main(void)
 
         // Check for matches after gravity completes (cascade)
         if (gravityCompleted) {
+            lastMatchCount = DetectMatches(&board);
+            if (lastMatchCount > 0) {
+                waitingToClear = true;
+                clearTimer = CLEAR_DELAY;
+            }
+        }
+
+        // Check for matches after rise completes
+        if (riseCompleted) {
             lastMatchCount = DetectMatches(&board);
             if (lastMatchCount > 0) {
                 waitingToClear = true;
@@ -101,14 +132,14 @@ int main(void)
         ClearBackground(BLACK);
 
         // Draw the game board with all animations
-        Renderer_DrawBoardWithAnimations(&board, boardX, boardY, &swapAnim, &gravityAnim);
+        Renderer_DrawBoardWithAnimations(&board, boardX, boardY, &swapAnim, &gravityAnim, &riseAnim);
 
         // Draw cursor
         Renderer_DrawCursor(cursor.x, cursor.y, boardX, boardY);
 
         // Draw UI text
         DrawText("Puzzle Attack", 10, 10, 20, WHITE);
-        DrawText("Arrow keys: move | SPACE: swap", 10, 35, 16, GRAY);
+        DrawText("Arrow keys: move | SPACE: swap | SHIFT: raise", 10, 35, 16, GRAY);
         DrawText(TextFormat("Score: %d", board.score), 10, 60, 20, YELLOW);
 
         if (waitingToClear && lastMatchCount > 0) {

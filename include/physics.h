@@ -35,4 +35,31 @@ bool ApplyGravity(GameBoard* board, GravityAnimation* anim);
 // Returns true when animation completes
 bool GravityAnimation_Update(GravityAnimation* anim, float deltaTime);
 
+// Check if a block at (x, y) is currently falling
+bool GravityAnimation_IsBlockFalling(const GravityAnimation* anim, int x, int y);
+
+// Add a new falling block to an active animation
+// Returns true if added, false if animation not active or array full
+bool GravityAnimation_AddBlock(GravityAnimation* anim, int x, int y, int fallDistance);
+
+// Rise animation state
+typedef struct {
+    bool active;
+    float progress;     // 0.0 to 1.0
+    float duration;     // Animation duration in seconds
+} RiseAnimation;
+
+// Initialize rise animation state
+void RiseAnimation_Init(RiseAnimation* anim);
+
+// Raise the board by one row
+// Shifts all blocks up, adds new random row at bottom
+// Populates the animation for visual effect
+// Returns true if successful, false if top row has blocks (game over)
+bool RaiseBoard(GameBoard* board, RiseAnimation* anim);
+
+// Update rise animation (call each frame with delta time)
+// Returns true when animation completes
+bool RiseAnimation_Update(RiseAnimation* anim, float deltaTime);
+
 #endif // PHYSICS_H

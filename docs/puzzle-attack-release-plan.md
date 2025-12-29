@@ -74,6 +74,9 @@ This release plan breaks down your Puzzle Attack project into 4 major phases ali
   - SPACE key swaps the two blocks under cursor
   - Swap animation (smooth transition)
   - Swaps persist (no swap-back if no match)
+  - Cannot swap falling/matched blocks, can swap stationary blocks during fall/match animations
+  - Can swap into column with falling blocks if above them (starts falling immediately)
+  - Matches detected immediately if created during falling
 
 ### Milestone 1.3: Match Detection & Clearing (Week 4)
 - [x] **MATCH-001**: Implement match detection algorithm
@@ -97,7 +100,7 @@ This release plan breaks down your Puzzle Attack project into 4 major phases ali
   - Apply gravity after swap so block falls into place
   - Works in both directions
 
-- [ ] **PHYS-003**: Row rise system
+- [x] **PHYS-003**: Row rise system
   - SHIFT key raises board by one row
   - New random blocks generated at bottom
   - All blocks shift up

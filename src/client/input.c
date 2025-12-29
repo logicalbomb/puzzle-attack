@@ -48,3 +48,8 @@ bool Input_SwapPressed(void)
 {
     return IsKeyPressed(KEY_SPACE);
 }
+
+bool Input_RaisePressed(void)
+{
+    return IsKeyPressed(KEY_LEFT_SHIFT) || IsKeyPressed(KEY_RIGHT_SHIFT);
+}

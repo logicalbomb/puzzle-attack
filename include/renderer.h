@@ -24,10 +24,11 @@ void Renderer_DrawBoard(const GameBoard* board, int offsetX, int offsetY);
 void Renderer_DrawBoardWithSwap(const GameBoard* board, int offsetX, int offsetY,
                                  const SwapAnimation* swapAnim);
 
-// Render the game board with all animations (swap and gravity)
+// Render the game board with all animations (swap, gravity, and rise)
 void Renderer_DrawBoardWithAnimations(const GameBoard* board, int offsetX, int offsetY,
                                        const SwapAnimation* swapAnim,
-                                       const GravityAnimation* gravityAnim);
+                                       const GravityAnimation* gravityAnim,
+                                       const RiseAnimation* riseAnim);
 
 // Render a single block at grid position
 void Renderer_DrawBlock(BlockType type, int gridX, int gridY, int offsetX, int offsetY);

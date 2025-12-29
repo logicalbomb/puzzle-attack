@@ -224,8 +224,15 @@ static bool IsBlockFalling(const GravityAnimation* gravityAnim, int x, int y)
 
 void Renderer_DrawBoardWithAnimations(const GameBoard* board, int offsetX, int offsetY,
                                        const SwapAnimation* swapAnim,
-                                       const GravityAnimation* gravityAnim)
+                                       const GravityAnimation* gravityAnim,
+                                       const RiseAnimation* riseAnim)
 {
+    // Calculate rise offset (blocks rise from below)
+    int riseOffset = 0;
+    if (riseAnim && riseAnim->active) {
+        riseOffset = (int)((1.0f - riseAnim->progress) * BLOCK_SIZE);
+    }
+
     // Draw background
     DrawRectangle(offsetX, offsetY, BOARD_PIXEL_WIDTH, BOARD_PIXEL_HEIGHT, DARKGRAY);
 
@@ -238,6 +245,9 @@ void Renderer_DrawBoardWithAnimations(const GameBoard* board, int offsetX, int o
         int lineY = offsetY + (y * BLOCK_SIZE);
         DrawLine(offsetX, lineY, offsetX + BOARD_PIXEL_WIDTH, lineY, GRAY);
     }
+
+    // Enable scissor mode to clip blocks to board area
+    BeginScissorMode(offsetX, offsetY, BOARD_PIXEL_WIDTH, BOARD_PIXEL_HEIGHT);
 
     // Draw blocks (skip animated blocks)
     for (int y = 0; y < BOARD_HEIGHT; y++) {
@@ -257,7 +267,7 @@ void Renderer_DrawBoardWithAnimations(const GameBoard* board, int offsetX, int o
             BlockType type = BLOCK_TYPE(cell);
             BlockState state = BLOCK_STATE(cell);
             int pixelX = offsetX + (x * BLOCK_SIZE);
-            int pixelY = offsetY + (y * BLOCK_SIZE);
+            int pixelY = offsetY + (y * BLOCK_SIZE) + riseOffset;
             DrawBlockWithState(type, state, pixelX, pixelY);
         }
     }
@@ -274,11 +284,11 @@ void Renderer_DrawBoardWithAnimations(const GameBoard* board, int offsetX, int o
         float animOffset = (1.0f - swapAnim->progress) * BLOCK_SIZE;
 
         int leftPixelX = offsetX + (leftGridX * BLOCK_SIZE) + (int)animOffset;
-        int leftPixelY = offsetY + (gridY * BLOCK_SIZE);
+        int leftPixelY = offsetY + (gridY * BLOCK_SIZE) + riseOffset;
         Renderer_DrawBlockAtPixel(leftType, leftPixelX, leftPixelY);
 
         int rightPixelX = offsetX + (rightGridX * BLOCK_SIZE) - (int)animOffset;
-        int rightPixelY = offsetY + (gridY * BLOCK_SIZE);
+        int rightPixelY = offsetY + (gridY * BLOCK_SIZE) + riseOffset;
         Renderer_DrawBlockAtPixel(rightType, rightPixelX, rightPixelY);
     }
 
@@ -295,11 +305,13 @@ void Renderer_DrawBoardWithAnimations(const GameBoard* board, int offsetX, int o
             // Calculate animated position (falling from above)
             float remainingFall = (1.0f - gravityAnim->progress) * fallDist * BLOCK_SIZE;
             int pixelX = offsetX + (x * BLOCK_SIZE);
-            int pixelY = offsetY + (y * BLOCK_SIZE) - (int)remainingFall;
+            int pixelY = offsetY + (y * BLOCK_SIZE) - (int)remainingFall + riseOffset;
 
             Renderer_DrawBlockAtPixel(type, pixelX, pixelY);
         }
     }
+
+    EndScissorMode();
 
     // Draw grid coordinates (for debugging)
     for (int x = 0; x < BOARD_WIDTH; x++) {
