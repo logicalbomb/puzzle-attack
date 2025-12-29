@@ -38,6 +38,10 @@ int main(void)
     float clearTimer = 0.0f;
     bool waitingToClear = false;
 
+    // Combo tracking
+    int comboCount = 0;
+    int displayCombo = 0;  // For UI display (persists briefly after combo ends)
+
     // Initialize window
     InitWindow(WINDOW_WIDTH, WINDOW_HEIGHT, "Puzzle Attack");
     SetTargetFPS(60);
@@ -89,6 +93,8 @@ int main(void)
         if (swapCompleted) {
             lastMatchCount = DetectMatches(&board);
             if (lastMatchCount > 0) {
+                comboCount = 1;  // Start new combo chain
+                displayCombo = 1;
                 waitingToClear = true;
                 clearTimer = CLEAR_DELAY;
             } else {
@@ -101,8 +107,13 @@ int main(void)
         if (gravityCompleted) {
             lastMatchCount = DetectMatches(&board);
             if (lastMatchCount > 0) {
+                comboCount++;  // Increment combo for cascade
+                displayCombo = comboCount;
                 waitingToClear = true;
                 clearTimer = CLEAR_DELAY;
+            } else {
+                // Cascade ended, reset combo
+                comboCount = 0;
             }
         }
 
@@ -110,6 +121,8 @@ int main(void)
         if (riseCompleted) {
             lastMatchCount = DetectMatches(&board);
             if (lastMatchCount > 0) {
+                comboCount = 1;  // Start new combo chain
+                displayCombo = 1;
                 waitingToClear = true;
                 clearTimer = CLEAR_DELAY;
             }
@@ -119,7 +132,7 @@ int main(void)
         if (waitingToClear) {
             clearTimer -= deltaTime;
             if (clearTimer <= 0.0f) {
-                lastClearCount = ClearMatches(&board);
+                lastClearCount = ClearMatches(&board, comboCount);
                 waitingToClear = false;
 
                 // Apply gravity after clearing
@@ -146,6 +159,11 @@ int main(void)
             DrawText(TextFormat("Matched: %d blocks!", lastMatchCount), 10, 85, 16, GREEN);
         } else if (lastClearCount > 0) {
             DrawText(TextFormat("Cleared: %d blocks", lastClearCount), 10, 85, 16, LIME);
+        }
+
+        // Display combo (only show if 2+ for cascade)
+        if (displayCombo >= 2) {
+            DrawText(TextFormat("%dx COMBO!", displayCombo), 10, 110, 24, ORANGE);
         }
 
         DrawFPS(WINDOW_WIDTH - 80, 10);

@@ -106,10 +106,10 @@ This release plan breaks down your Puzzle Attack project into 4 major phases ali
   - All blocks shift up
   - No instant matches in new row
 
-- [ ] **GAME-004**: Implement cascade/combo system
+- [x] **GAME-004**: Implement cascade/combo system
   - Detect new matches after gravity settles
   - Chain reactions count as combos
-  - Combo multiplier for scoring
+  - Combo multiplier for scoring (2x for combo 2, 3x for combo 3, etc.)
 
 ### Milestone 1.5: Game State & UI (Week 6)
 - [ ] **UI-001**: Implement score display

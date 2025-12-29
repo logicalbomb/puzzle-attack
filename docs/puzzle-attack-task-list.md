@@ -480,7 +480,7 @@ bool RaiseBoard(GameBoard* board, RiseAnimation* anim);
 
 ---
 
-### GAME-004: Cascade/Combo System
+### GAME-004: Cascade/Combo System ✅ COMPLETED
 **Description:** Detect and handle chain reactions
 
 **Context:** When new blocks fall, they might create new matches.
@@ -511,6 +511,18 @@ while (matchesExist) {
     comboCount++;
 }
 ```
+
+**Files Modified:**
+- `include/game_logic.h` - Added comboLevel param to ClearMatches
+- `src/shared/game_logic.c` - Apply combo multiplier to score
+- `src/main.c` - Track combo count, display combo UI
+
+**Implementation:**
+- Combo starts at 1 when swap/rise creates match
+- Combo increments each cascade (gravity creates new match)
+- Combo resets when gravity completes with no new matches
+- Score multiplier: baseScore * comboLevel
+- UI shows "Nx COMBO!" for cascades (combo >= 2)
 
 ---
 

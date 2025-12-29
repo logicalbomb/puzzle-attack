@@ -34,7 +34,8 @@ bool SwapBlocks(GameBoard* board, int x, int y);
 
 // Clear all blocks marked as MATCHED
 // Sets them to BLOCK_EMPTY and adds to score
+// comboLevel: 1 = normal, 2+ = cascade (applies multiplier)
 // Returns the number of blocks cleared
-int ClearMatches(GameBoard* board);
+int ClearMatches(GameBoard* board, int comboLevel);
 
 #endif // GAME_LOGIC_H

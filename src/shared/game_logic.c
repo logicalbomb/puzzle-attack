@@ -60,7 +60,7 @@ bool SwapBlocks(GameBoard* board, int x, int y)
     return true;
 }
 
-int ClearMatches(GameBoard* board)
+int ClearMatches(GameBoard* board, int comboLevel)
 {
     int clearedCount = 0;
 
@@ -71,16 +71,19 @@ int ClearMatches(GameBoard* board)
         }
     }
 
-    // Add score for cleared blocks
+    // Add score for cleared blocks with combo multiplier
     if (clearedCount > 0) {
-        board->score += clearedCount * SCORE_PER_BLOCK;
+        int baseScore = clearedCount * SCORE_PER_BLOCK;
 
         // Apply bonus for larger clears
         if (clearedCount >= 5) {
-            board->score += SCORE_BONUS_5_PLUS_MATCH;
+            baseScore += SCORE_BONUS_5_PLUS_MATCH;
         } else if (clearedCount >= 4) {
-            board->score += SCORE_BONUS_4_MATCH;
+            baseScore += SCORE_BONUS_4_MATCH;
         }
+
+        // Apply combo multiplier (1x for combo 1, 2x for combo 2, etc.)
+        board->score += baseScore * comboLevel;
     }
 
     return clearedCount;
