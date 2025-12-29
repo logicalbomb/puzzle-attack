@@ -8,7 +8,8 @@ typedef enum {
     STATE_MENU,
     STATE_PLAYING,
     STATE_PAUSED,
-    STATE_GAME_OVER
+    STATE_GAME_OVER,
+    STATE_DEV_MENU
 } GameState;
 
 // Check for state transition inputs (client-only, uses raylib)

@@ -7,298 +7,457 @@
 #include "input.h"
 #include "ui.h"
 #include "game_state.h"
+#include "dev_settings.h"
 
-// Clear animation timing
-static const float CLEAR_DELAY = 0.3f;  // Time to show matched blocks before clearing
+// Game timing constants
+static const float CLEAR_DELAY = 0.3f;
+static const float GAME_OVER_COUNTDOWN = 5.0f;
+static const float MATCH_PAUSE_DURATION = 0.2f;
+static const float AUTO_RISE_INTERVAL = 7.0f;
 
-// Game over countdown settings
-static const float GAME_OVER_COUNTDOWN = 5.0f;  // Total countdown time
-static const float MATCH_PAUSE_DURATION = 0.2f; // Pause countdown when match detected
+// Game context - holds all game state
+typedef struct {
+    // Core game objects
+    GameBoard board;
+    Cursor cursor;
 
-// Auto-rise settings
-static const float AUTO_RISE_INTERVAL = 7.0f;  // Time between auto-rises
+    // Animations
+    SwapAnimation swapAnim;
+    GravityAnimation gravityAnim;
+    RiseAnimation riseAnim;
 
-// Helper to reset game state for new game
-static void ResetGame(GameBoard* board, Cursor* cursor, SwapAnimation* swapAnim,
-                      GravityAnimation* gravityAnim, RiseAnimation* riseAnim,
-                      int* comboCount, float* clearTimer, bool* waitingToClear,
-                      float* gameOverTimer, float* matchPauseTimer,
-                      float* autoRiseTimer, UIState* ui)
+    // Match/clear state
+    int comboCount;
+    float clearTimer;
+    bool waitingToClear;
+
+    // Timers
+    float gameOverTimer;
+    float matchPauseTimer;
+    float autoRiseTimer;
+
+    // UI
+    UIState ui;
+    int finalScore;
+
+    // State machine
+    GameState state;
+    GameState previousState;  // For returning from dev menu
+
+    // Developer settings
+    DevSettings devSettings;
+    DevSettingsMenu devMenu;
+
+    // Display
+    int boardX;
+    int boardY;
+} Game;
+
+// Forward declarations
+static void Game_Init(Game* game);
+static void Game_ResetPlay(Game* game);
+static void Game_Update(Game* game, float deltaTime);
+static void Game_Render(Game* game);
+
+static void Update_Menu(Game* game);
+static void Update_Playing(Game* game, float deltaTime);
+static void Update_Paused(Game* game);
+static void Update_GameOver(Game* game);
+static void Update_DevMenu(Game* game);
+
+static void Render_Menu(Game* game);
+static void Render_Playing(Game* game);
+static void Render_Paused(Game* game);
+static void Render_GameOver(Game* game);
+static void Render_DevMenu(Game* game);
+
+// Initialize game to starting state
+static void Game_Init(Game* game)
 {
-    GameBoard_Init(board);
-    GameBoard_FillRandom(board);
-    Cursor_Init(cursor);
-    SwapAnimation_Init(swapAnim);
-    GravityAnimation_Init(gravityAnim);
-    RiseAnimation_Init(riseAnim);
-    *comboCount = 0;
-    *clearTimer = 0.0f;
-    *waitingToClear = false;
-    *gameOverTimer = 0.0f;
-    *matchPauseTimer = 0.0f;
-    *autoRiseTimer = AUTO_RISE_INTERVAL;
-    ui->displayCombo = 0;
-    ui->lastClearCount = 0;
-    ui->showingMatch = false;
-    // Note: highScore is preserved across games
+    GameBoard_Init(&game->board);
+    GameBoard_FillRandom(&game->board);
+    Cursor_Init(&game->cursor);
+    SwapAnimation_Init(&game->swapAnim);
+    GravityAnimation_Init(&game->gravityAnim);
+    RiseAnimation_Init(&game->riseAnim);
+
+    game->comboCount = 0;
+    game->clearTimer = 0.0f;
+    game->waitingToClear = false;
+    game->gameOverTimer = 0.0f;
+    game->matchPauseTimer = 0.0f;
+    game->autoRiseTimer = AUTO_RISE_INTERVAL;
+
+    UI_Init(&game->ui);
+    game->finalScore = 0;
+    game->state = STATE_MENU;
+    game->previousState = STATE_MENU;
+
+    DevSettings_Init(&game->devSettings);
+    DevSettingsMenu_Init(&game->devMenu);
+
+    game->boardX = Renderer_GetCenteredOffsetX();
+    game->boardY = Renderer_GetCenteredOffsetY();
 }
 
-int main(void)
+// Reset for new game (preserves high score and dev settings)
+static void Game_ResetPlay(Game* game)
 {
-    // Initialize game board with random blocks
-    GameBoard board;
-    GameBoard_Init(&board);
-    GameBoard_FillRandom(&board);
+    GameBoard_Init(&game->board);
+    GameBoard_FillRandom(&game->board);
+    Cursor_Init(&game->cursor);
+    SwapAnimation_Init(&game->swapAnim);
+    GravityAnimation_Init(&game->gravityAnim);
+    RiseAnimation_Init(&game->riseAnim);
 
-    // Initialize cursor
-    Cursor cursor;
-    Cursor_Init(&cursor);
+    game->comboCount = 0;
+    game->clearTimer = 0.0f;
+    game->waitingToClear = false;
+    game->gameOverTimer = 0.0f;
+    game->matchPauseTimer = 0.0f;
+    game->autoRiseTimer = AUTO_RISE_INTERVAL;
 
-    // Initialize swap animation
-    SwapAnimation swapAnim;
-    SwapAnimation_Init(&swapAnim);
+    game->ui.displayCombo = 0;
+    game->ui.lastClearCount = 0;
+    game->ui.showingMatch = false;
+}
 
-    // Initialize gravity animation
-    GravityAnimation gravityAnim;
-    GravityAnimation_Init(&gravityAnim);
+// Main update dispatcher
+static void Game_Update(Game* game, float deltaTime)
+{
+    switch (game->state) {
+        case STATE_MENU:
+            Update_Menu(game);
+            break;
+        case STATE_PLAYING:
+            Update_Playing(game, deltaTime);
+            break;
+        case STATE_PAUSED:
+            Update_Paused(game);
+            break;
+        case STATE_GAME_OVER:
+            Update_GameOver(game);
+            break;
+        case STATE_DEV_MENU:
+            Update_DevMenu(game);
+            break;
+    }
+}
 
-    // Initialize rise animation
-    RiseAnimation riseAnim;
-    RiseAnimation_Init(&riseAnim);
+// Main render dispatcher
+static void Game_Render(Game* game)
+{
+    BeginDrawing();
+    ClearBackground(BLACK);
 
-    // Track match/clear state
-    int lastMatchCount = 0;
-    float clearTimer = 0.0f;
-    bool waitingToClear = false;
+    switch (game->state) {
+        case STATE_MENU:
+            Render_Menu(game);
+            break;
+        case STATE_PLAYING:
+            Render_Playing(game);
+            break;
+        case STATE_PAUSED:
+            Render_Paused(game);
+            break;
+        case STATE_GAME_OVER:
+            Render_GameOver(game);
+            break;
+        case STATE_DEV_MENU:
+            Render_DevMenu(game);
+            break;
+    }
 
-    // Combo tracking
-    int comboCount = 0;
+    // Debug UI
+    DrawFPS(WINDOW_WIDTH - 80, 35);
 
-    // Initialize UI state
-    UIState ui;
-    UI_Init(&ui);
+    EndDrawing();
+}
 
-    // Game state
-    GameState gameState = STATE_MENU;
-    int finalScore = 0;  // Score when game ended
+// Menu state
+static void Update_Menu(Game* game)
+{
+    if (IsKeyPressed(KEY_D)) {
+        game->previousState = STATE_MENU;
+        game->state = STATE_DEV_MENU;
+        return;
+    }
+
+    if (IsKeyPressed(KEY_ENTER)) {
+        Game_ResetPlay(game);
+        game->state = STATE_PLAYING;
+    }
+}
+
+static void Render_Menu(Game* game)
+{
+    (void)game;  // unused
+    UI_DrawMenu(WINDOW_WIDTH, WINDOW_HEIGHT);
+}
+
+// Playing state
+static void Update_Playing(Game* game, float deltaTime)
+{
+    // Pause check
+    if (IsKeyPressed(KEY_P)) {
+        game->state = STATE_PAUSED;
+        return;
+    }
+
+    // Handle cursor movement
+    Cursor_HandleInput(&game->cursor);
+
+    // Handle swap input
+    bool canSwap = !game->swapAnim.active && !game->riseAnim.active;
+    if (canSwap && Input_SwapPressed()) {
+        bool leftFalling = GravityAnimation_IsBlockFalling(&game->gravityAnim, game->cursor.x, game->cursor.y);
+        bool rightFalling = GravityAnimation_IsBlockFalling(&game->gravityAnim, game->cursor.x + 1, game->cursor.y);
+
+        if (!leftFalling && !rightFalling) {
+            if (SwapBlocks(&game->board, game->cursor.x, game->cursor.y)) {
+                SwapAnimation_Start(&game->swapAnim, game->cursor.x, game->cursor.y);
+            }
+        }
+    }
+
+    // Handle manual raise input
+    bool animating = game->swapAnim.active || game->gravityAnim.active ||
+                     game->riseAnim.active || game->waitingToClear;
+    bool inDanger = game->gameOverTimer > 0.0f;
+    if (!animating && !inDanger && Input_RaisePressed()) {
+        RaiseBoard(&game->board, &game->riseAnim);
+    }
+
+    // Update animations
+    bool swapCompleted = SwapAnimation_Update(&game->swapAnim, deltaTime);
+    bool gravityCompleted = GravityAnimation_Update(&game->gravityAnim, deltaTime);
+    bool riseCompleted = RiseAnimation_Update(&game->riseAnim, deltaTime);
+
+    // Check for matches after swap
+    if (swapCompleted) {
+        int matchCount = DetectMatches(&game->board);
+        if (matchCount > 0) {
+            game->comboCount = 1;
+            game->ui.displayCombo = 1;
+            game->ui.lastClearCount = matchCount;
+            game->ui.showingMatch = true;
+            game->waitingToClear = true;
+            game->clearTimer = CLEAR_DELAY;
+            game->matchPauseTimer = MATCH_PAUSE_DURATION;
+        } else {
+            ApplyGravity(&game->board, &game->gravityAnim);
+        }
+    }
+
+    // Check for cascade matches after gravity
+    if (gravityCompleted) {
+        int matchCount = DetectMatches(&game->board);
+        if (matchCount > 0) {
+            game->comboCount++;
+            game->ui.displayCombo = game->comboCount;
+            game->ui.lastClearCount = matchCount;
+            game->ui.showingMatch = true;
+            game->waitingToClear = true;
+            game->clearTimer = CLEAR_DELAY;
+            game->matchPauseTimer = MATCH_PAUSE_DURATION;
+        } else {
+            game->comboCount = 0;
+        }
+    }
+
+    // Check for matches after rise
+    if (riseCompleted) {
+        int matchCount = DetectMatches(&game->board);
+        if (matchCount > 0) {
+            game->comboCount = 1;
+            game->ui.displayCombo = 1;
+            game->ui.lastClearCount = matchCount;
+            game->ui.showingMatch = true;
+            game->waitingToClear = true;
+            game->clearTimer = CLEAR_DELAY;
+            game->matchPauseTimer = MATCH_PAUSE_DURATION;
+        }
+    }
+
+    // Clear timer
+    if (game->waitingToClear) {
+        game->clearTimer -= deltaTime;
+        if (game->clearTimer <= 0.0f) {
+            game->ui.lastClearCount = ClearMatches(&game->board, game->comboCount);
+            game->ui.showingMatch = false;
+            game->waitingToClear = false;
+            UI_UpdateHighScore(&game->ui, game->board.score);
+            ApplyGravity(&game->board, &game->gravityAnim);
+        }
+    }
 
     // Game over countdown
-    float gameOverTimer = 0.0f;   // Countdown to game over (0 = not counting)
-    float matchPauseTimer = 0.0f; // Pause countdown when match detected
+    if (GameBoard_IsTopRowFilled(&game->board)) {
+        if (game->gameOverTimer <= 0.0f) {
+            game->gameOverTimer = GAME_OVER_COUNTDOWN;
+        }
 
-    // Auto-rise timer
-    float autoRiseTimer = AUTO_RISE_INTERVAL;
+        if (game->matchPauseTimer > 0.0f) {
+            game->matchPauseTimer -= deltaTime;
+        } else {
+            game->gameOverTimer -= deltaTime;
+            if (game->gameOverTimer <= 0.0f) {
+                game->finalScore = game->board.score;
+                game->state = STATE_GAME_OVER;
+                return;
+            }
+        }
+    } else {
+        game->gameOverTimer = 0.0f;
+        game->matchPauseTimer = 0.0f;
+    }
 
-    // Initialize window
+    // Auto-rise
+    if (!game->devSettings.disableAutoRise) {
+        bool canAutoRise = !game->swapAnim.active && !game->gravityAnim.active &&
+                           !game->riseAnim.active && !game->waitingToClear;
+        if (canAutoRise && game->matchPauseTimer <= 0.0f) {
+            game->autoRiseTimer -= deltaTime;
+            if (game->autoRiseTimer <= 0.0f) {
+                RaiseBoard(&game->board, &game->riseAnim);
+                game->autoRiseTimer = AUTO_RISE_INTERVAL;
+            }
+        }
+    }
+}
+
+static void Render_Playing(Game* game)
+{
+    // Calculate danger level
+    DangerLevel danger = DANGER_NONE;
+    if (game->gameOverTimer > 0.0f) {
+        danger = (game->gameOverTimer <= 2.0f) ? DANGER_CRITICAL : DANGER_WARNING;
+    }
+
+    Renderer_DrawBoardWithAnimations(&game->board, game->boardX, game->boardY,
+                                      &game->swapAnim, &game->gravityAnim, &game->riseAnim);
+    Renderer_DrawCursor(game->cursor.x, game->cursor.y, game->boardX, game->boardY);
+    UI_DrawGameplay(&game->ui, &game->board, WINDOW_WIDTH, danger);
+}
+
+// Paused state
+static void Update_Paused(Game* game)
+{
+    if (IsKeyPressed(KEY_D)) {
+        game->previousState = STATE_PAUSED;
+        game->state = STATE_DEV_MENU;
+        return;
+    }
+
+    if (IsKeyPressed(KEY_P)) {
+        game->state = STATE_PLAYING;
+    } else if (IsKeyPressed(KEY_M)) {
+        game->state = STATE_MENU;
+    }
+}
+
+static void Render_Paused(Game* game)
+{
+    // Draw game in background
+    Render_Playing(game);
+    // Draw pause overlay
+    UI_DrawPause(WINDOW_WIDTH, WINDOW_HEIGHT);
+}
+
+// Game over state
+static void Update_GameOver(Game* game)
+{
+    if (IsKeyPressed(KEY_D)) {
+        game->previousState = STATE_GAME_OVER;
+        game->state = STATE_DEV_MENU;
+        return;
+    }
+
+    if (IsKeyPressed(KEY_R)) {
+        Game_ResetPlay(game);
+        game->state = STATE_PLAYING;
+    } else if (IsKeyPressed(KEY_M)) {
+        game->state = STATE_MENU;
+    }
+}
+
+static void Render_GameOver(Game* game)
+{
+    // Draw board in background
+    Renderer_DrawBoardWithAnimations(&game->board, game->boardX, game->boardY,
+                                      &game->swapAnim, &game->gravityAnim, &game->riseAnim);
+    UI_DrawGameOver(&game->ui, game->finalScore, WINDOW_WIDTH, WINDOW_HEIGHT);
+}
+
+// Dev menu state
+static void Update_DevMenu(Game* game)
+{
+    // Navigate with arrow keys
+    if (IsKeyPressed(KEY_UP)) {
+        game->devMenu.cursorIndex--;
+        if (game->devMenu.cursorIndex < 0) {
+            game->devMenu.cursorIndex = DEV_SETTINGS_COUNT - 1;
+        }
+    }
+    if (IsKeyPressed(KEY_DOWN)) {
+        game->devMenu.cursorIndex++;
+        if (game->devMenu.cursorIndex >= DEV_SETTINGS_COUNT) {
+            game->devMenu.cursorIndex = 0;
+        }
+    }
+
+    // Toggle selected option
+    if (IsKeyPressed(KEY_SPACE)) {
+        switch (game->devMenu.cursorIndex) {
+            case 0:
+                game->devSettings.disableAutoRise = !game->devSettings.disableAutoRise;
+                break;
+        }
+    }
+
+    // Close dev menu
+    if (IsKeyPressed(KEY_D) || IsKeyPressed(KEY_ESCAPE)) {
+        game->state = game->previousState;
+    }
+}
+
+static void Render_DevMenu(Game* game)
+{
+    // Draw previous state in background
+    switch (game->previousState) {
+        case STATE_MENU:
+            Render_Menu(game);
+            break;
+        case STATE_PLAYING:
+            Render_Playing(game);
+            break;
+        case STATE_PAUSED:
+            Render_Paused(game);
+            break;
+        case STATE_GAME_OVER:
+            Render_GameOver(game);
+            break;
+        case STATE_DEV_MENU:
+            break;  // shouldn't happen
+    }
+
+    // Draw dev menu overlay
+    DevSettingsMenu_Draw(&game->devMenu, &game->devSettings, WINDOW_WIDTH, WINDOW_HEIGHT);
+}
+
+// Main entry point
+int main(void)
+{
+    Game game;
+    Game_Init(&game);
+
     InitWindow(WINDOW_WIDTH, WINDOW_HEIGHT, "Puzzle Attack");
     SetTargetFPS(60);
 
-    // Calculate centered board position
-    int boardX = Renderer_GetCenteredOffsetX();
-    int boardY = Renderer_GetCenteredOffsetY();
-
-    // Main game loop
-    while (!WindowShouldClose())
-    {
+    while (!WindowShouldClose()) {
         float deltaTime = GetFrameTime();
-
-        // Check for state transitions
-        GameState newState = GameState_CheckInput(gameState);
-        if (newState != gameState) {
-            // Handle state transitions that need game reset
-            if (newState == STATE_PLAYING &&
-                (gameState == STATE_MENU || gameState == STATE_GAME_OVER)) {
-                // Starting new game from menu or restart from game over
-                ResetGame(&board, &cursor, &swapAnim, &gravityAnim, &riseAnim,
-                         &comboCount, &clearTimer, &waitingToClear,
-                         &gameOverTimer, &matchPauseTimer, &autoRiseTimer, &ui);
-            }
-            gameState = newState;
-        }
-
-        // Only process game logic when playing
-        if (GameState_IsPlaying(gameState)) {
-            // Handle cursor movement
-            Cursor_HandleInput(&cursor);
-
-            // Handle swap input
-            // Allowed during fall/clear animations, blocked during swap/rise animations
-            // Cannot swap blocks that are currently falling
-            bool canSwap = !swapAnim.active && !riseAnim.active;
-            if (canSwap && Input_SwapPressed()) {
-                // Check if either block under cursor is falling
-                bool leftFalling = GravityAnimation_IsBlockFalling(&gravityAnim, cursor.x, cursor.y);
-                bool rightFalling = GravityAnimation_IsBlockFalling(&gravityAnim, cursor.x + 1, cursor.y);
-
-                if (!leftFalling && !rightFalling) {
-                    if (SwapBlocks(&board, cursor.x, cursor.y)) {
-                        SwapAnimation_Start(&swapAnim, cursor.x, cursor.y);
-                    }
-                }
-            }
-
-            // Handle raise input (only when not animating and not in danger)
-            bool animating = swapAnim.active || gravityAnim.active || riseAnim.active || waitingToClear;
-            bool inDanger = gameOverTimer > 0.0f;
-            if (!animating && !inDanger && Input_RaisePressed()) {
-                RaiseBoard(&board, &riseAnim);
-                // Note: Can't raise if top row filled, but game over is now handled by countdown
-            }
-
-            // Update swap animation
-            bool swapCompleted = SwapAnimation_Update(&swapAnim, deltaTime);
-
-            // Update gravity animation
-            bool gravityCompleted = GravityAnimation_Update(&gravityAnim, deltaTime);
-
-            // Update rise animation
-            bool riseCompleted = RiseAnimation_Update(&riseAnim, deltaTime);
-
-            // Check for matches after swap completes
-            if (swapCompleted) {
-                lastMatchCount = DetectMatches(&board);
-                if (lastMatchCount > 0) {
-                    comboCount = 1;  // Start new combo chain
-                    ui.displayCombo = 1;
-                    ui.lastClearCount = lastMatchCount;
-                    ui.showingMatch = true;
-                    waitingToClear = true;
-                    clearTimer = CLEAR_DELAY;
-                    matchPauseTimer = MATCH_PAUSE_DURATION;  // Pause countdown
-                } else {
-                    // No matches - apply gravity (handles swapping into empty space)
-                    ApplyGravity(&board, &gravityAnim);
-                }
-            }
-
-            // Check for matches after gravity completes (cascade)
-            if (gravityCompleted) {
-                lastMatchCount = DetectMatches(&board);
-                if (lastMatchCount > 0) {
-                    comboCount++;  // Increment combo for cascade
-                    ui.displayCombo = comboCount;
-                    ui.lastClearCount = lastMatchCount;
-                    ui.showingMatch = true;
-                    waitingToClear = true;
-                    clearTimer = CLEAR_DELAY;
-                    matchPauseTimer = MATCH_PAUSE_DURATION;  // Pause countdown
-                } else {
-                    // Cascade ended, reset combo
-                    comboCount = 0;
-                }
-            }
-
-            // Check for matches after rise completes
-            if (riseCompleted) {
-                lastMatchCount = DetectMatches(&board);
-                if (lastMatchCount > 0) {
-                    comboCount = 1;  // Start new combo chain
-                    ui.displayCombo = 1;
-                    ui.lastClearCount = lastMatchCount;
-                    ui.showingMatch = true;
-                    waitingToClear = true;
-                    clearTimer = CLEAR_DELAY;
-                    matchPauseTimer = MATCH_PAUSE_DURATION;  // Pause countdown
-                }
-            }
-
-            // Update clear timer and clear matches when ready
-            if (waitingToClear) {
-                clearTimer -= deltaTime;
-                if (clearTimer <= 0.0f) {
-                    ui.lastClearCount = ClearMatches(&board, comboCount);
-                    ui.showingMatch = false;
-                    waitingToClear = false;
-
-                    // Update high score
-                    UI_UpdateHighScore(&ui, board.score);
-
-                    // Apply gravity after clearing
-                    ApplyGravity(&board, &gravityAnim);
-                }
-            }
-
-            // Game over countdown logic
-            if (GameBoard_IsTopRowFilled(&board)) {
-                // Start countdown if not already running
-                if (gameOverTimer <= 0.0f) {
-                    gameOverTimer = GAME_OVER_COUNTDOWN;
-                }
-
-                // Update match pause timer
-                if (matchPauseTimer > 0.0f) {
-                    matchPauseTimer -= deltaTime;
-                } else {
-                    // Decrement countdown
-                    gameOverTimer -= deltaTime;
-                    if (gameOverTimer <= 0.0f) {
-                        // Game over!
-                        finalScore = board.score;
-                        gameState = STATE_GAME_OVER;
-                    }
-                }
-            } else {
-                // Top row clear - reset countdown
-                gameOverTimer = 0.0f;
-                matchPauseTimer = 0.0f;
-            }
-
-            // Auto-rise logic (works even during game over countdown)
-            bool canAutoRise = !swapAnim.active && !gravityAnim.active && !riseAnim.active && !waitingToClear;
-            if (canAutoRise) {
-                // Pause auto-rise timer when match pause is active
-                if (matchPauseTimer <= 0.0f) {
-                    autoRiseTimer -= deltaTime;
-                    if (autoRiseTimer <= 0.0f) {
-                        RaiseBoard(&board, &riseAnim);
-                        autoRiseTimer = AUTO_RISE_INTERVAL;
-                    }
-                }
-            }
-        }
-
-        // Calculate danger level for UI
-        DangerLevel danger = DANGER_NONE;
-        if (gameOverTimer > 0.0f) {
-            if (gameOverTimer <= 2.0f) {
-                danger = DANGER_CRITICAL;
-            } else {
-                danger = DANGER_WARNING;
-            }
-        }
-
-        // Rendering
-        BeginDrawing();
-        ClearBackground(BLACK);
-
-        // Draw based on game state
-        switch (gameState) {
-            case STATE_MENU:
-                UI_DrawMenu(WINDOW_WIDTH, WINDOW_HEIGHT);
-                break;
-
-            case STATE_PLAYING:
-            case STATE_PAUSED:
-                // Draw the game board with all animations
-                Renderer_DrawBoardWithAnimations(&board, boardX, boardY, &swapAnim, &gravityAnim, &riseAnim);
-                Renderer_DrawCursor(cursor.x, cursor.y, boardX, boardY);
-                UI_DrawGameplay(&ui, &board, WINDOW_WIDTH, danger);
-
-                if (gameState == STATE_PAUSED) {
-                    UI_DrawPause(WINDOW_WIDTH, WINDOW_HEIGHT);
-                }
-                break;
-
-            case STATE_GAME_OVER:
-                // Draw board in background
-                Renderer_DrawBoardWithAnimations(&board, boardX, boardY, &swapAnim, &gravityAnim, &riseAnim);
-                UI_DrawGameOver(&ui, finalScore, WINDOW_WIDTH, WINDOW_HEIGHT);
-                break;
-        }
-
-        DrawFPS(WINDOW_WIDTH - 80, 35);
-
-        EndDrawing();
+        Game_Update(&game, deltaTime);
+        Game_Render(&game);
     }
 
     CloseWindow();

@@ -655,7 +655,7 @@ while (matchesExist) {
 
 ---
 
-### DEBUG-001: Developer Settings Menu
+### DEBUG-001: Developer Settings Menu ✅ COMPLETED
 **Description:** Add toggleable developer settings for debugging gameplay
 
 **Context:** Allows testing specific game mechanics by disabling features during development.
@@ -694,6 +694,15 @@ typedef struct {
     int cursorIndex;   // Selected option
 } DevSettingsMenu;
 ```
+
+**Implementation:**
+- Created dev_settings.h with DevSettings and DevSettingsMenu structs
+- Created dev_settings.c with init, input handling, and rendering
+- D key toggles menu from menu/pause/game over states
+- Arrow keys navigate, SPACE toggles, ESC/D closes
+- First setting: "Disable Auto-Rise" controls auto-rise in main.c
+- Menu overlay with semi-transparent background
+- Settings persist during session
 
 ---
 
