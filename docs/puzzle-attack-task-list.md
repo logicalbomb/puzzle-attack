@@ -587,16 +587,13 @@ while (matchesExist) {
 
 ---
 
-### GAME-005: Game Over Condition
-**Description:** End game when time/moves run out or board fills
+### GAME-005: Game Over Condition ✅ COMPLETED
+**Description:** End game when board fills to top
 
 **Context:** Games need an end condition.
 
 **Requirements:**
-Choose one:
-- **Option A:** Time limit (2 minutes)
-- **Option B:** Move limit (20 swaps)
-- **Option C:** Board fills to top (no valid swaps)
+- Implemented Option C: Board fills to top (Panel de Pon style)
 
 **Success Criteria:**
 - Game ends at appropriate time
@@ -604,8 +601,248 @@ Choose one:
 - Final score displayed
 - Can restart game
 
+**Files Modified:**
+- `include/game_board.h` - Added GameBoard_IsTopRowFilled
+- `src/shared/game_board.c` - Implemented top row check
+- `src/main.c` - Check game over conditions
+
+**Implementation:**
+- GameBoard_IsTopRowFilled checks if any block in top row (y=0)
+- Game over triggers when:
+  1. RaiseBoard fails (top row filled, can't push more)
+  2. Gravity completes with no matches AND top row is filled
+- Sets finalScore and transitions to STATE_GAME_OVER
+- High score updated before game over screen
+
+---
+
+### PHYS-004: Auto-Rise System
+**Description:** Implement automatic board rising on a timer
+
+**Context:** Adds pressure to gameplay by forcing the board to rise periodically, independent of player input.
+
+**Requirements:**
+- Auto-rise timer starts at game start (default: 7 seconds)
+- When timer expires, board rises automatically (same as manual raise)
+- Timer resets after each auto-rise
+- When a match is made, auto-rise timer pauses for 0.2 seconds
+- Auto-rise can occur even during game over countdown (unlike manual raise which is disabled)
+- Timer pauses during pause state
+- Timer resets on new game
+
+**Success Criteria:**
+- Board rises every 7 seconds automatically
+- Matches pause the timer briefly
+- Auto-rise works even when in danger state
+- Manual raise still works (when not in danger)
+- Timer visible to player (optional)
+
 **Files to Modify:**
-- `src/shared/game_logic.c`
+- `src/main.c` - Add autoRiseTimer, update logic
+
+**Implementation Notes:**
+- Use same RaiseBoard function as manual raise
+- Share MATCH_PAUSE_DURATION constant with game over countdown
+- Check for game over after auto-rise (top row filled triggers countdown)
+
+---
+
+### DEBUG-001: Developer Settings Menu
+**Description:** Add toggleable developer settings for debugging gameplay
+
+**Context:** Allows testing specific game mechanics by disabling features during development.
+
+**Requirements:**
+- Press D key to open dev settings overlay (from menu, pause, or game over screens)
+- Dev settings menu shows list of toggleable options
+- Cursor highlights current option (arrow keys to navigate)
+- SPACE key toggles selected option on/off
+- ESC or D key closes dev settings menu
+- First setting: "Disable Auto-Rise" (default: off)
+- Settings persist during session (reset on game restart optional)
+- Visual indicator when settings are non-default (optional)
+
+**Success Criteria:**
+- D key opens dev menu from menu/pause/game over states
+- Cursor navigates between options
+- SPACE toggles option state
+- Disabled auto-rise prevents automatic board rising
+- Dev menu closes cleanly
+
+**Files to Create/Modify:**
+- `include/dev_settings.h` - DevSettings struct, function declarations
+- `src/client/dev_settings.c` - Settings state, menu rendering, input handling
+- `src/main.c` - Integrate dev settings into game loop
+
+**Data Structure:**
+```c
+typedef struct {
+    bool disableAutoRise;
+    // Future settings...
+} DevSettings;
+
+typedef struct {
+    bool active;       // Menu open
+    int cursorIndex;   // Selected option
+} DevSettingsMenu;
+```
+
+---
+
+### DEBUG-002: Debug UI Toggle
+**Description:** Add dev setting to show/hide debug UI elements
+
+**Context:** Debug UI (FPS counter, etc.) useful during development but should be toggleable.
+
+**Requirements:**
+- Add "Show Debug UI" option to dev settings menu (default: on)
+- When enabled, display FPS counter and future debug elements
+- When disabled, hide all debug UI
+- Debug UI must not overlap existing game UI
+- Position debug elements in dedicated area (e.g., top-right corner below high score)
+
+**Success Criteria:**
+- Toggle hides/shows FPS counter
+- Debug UI doesn't obscure game UI
+- Setting accessible from dev menu
+- Easy to extend with more debug elements
+
+**Files to Modify:**
+- `include/dev_settings.h` - Add showDebugUI to DevSettings
+- `src/client/dev_settings.c` - Add menu option
+- `src/main.c` - Conditionally render debug UI
+
+---
+
+### DEBUG-003: Deterministic Game Seeding
+**Description:** Make game fully deterministic based on seed value for reproducibility
+
+**Context:** Enables repeatable games for testing, debugging, and replay functionality. Test scripts can send known inputs at known times to verify expected outcomes.
+
+**Requirements:**
+- All random operations use seeded RNG (block generation, new rows, etc.)
+- Seed can be set via dev settings menu or command-line argument
+- Same seed + same inputs = identical game every time
+- Display current seed in debug UI (when enabled)
+- Option to generate random seed or input specific seed
+- Seed resets/reseeds on new game start
+
+**Success Criteria:**
+- Two games with same seed produce identical initial boards
+- Auto-rise generates same blocks with same seed
+- Manual raise generates same blocks with same seed
+- Test script can replay known game scenarios
+- Seed visible for sharing/reproducing bugs
+
+**Files to Create/Modify:**
+- `include/rng.h` - Seeded RNG wrapper functions
+- `src/shared/rng.c` - RNG state, seed/generate functions
+- `src/shared/board_init.c` - Use seeded RNG
+- `src/shared/physics.c` - Use seeded RNG for new rows
+- `include/dev_settings.h` - Add seed field
+- `src/main.c` - Seed initialization, display in debug UI
+
+**Implementation Notes:**
+- Replace all rand() calls with seeded RNG wrapper
+- Store RNG state separately from game state for save/load
+- Consider using xorshift or similar for speed and portability
+- Command-line: `./puzzle-attack --seed 12345`
+
+---
+
+### DEBUG-004: Command Recording System
+**Description:** Record all game actions as frame-indexed commands for replay and testing
+
+**Context:** Combined with deterministic seeding, allows full game replay and automated testing by recording inputs and game events.
+
+**Requirements:**
+- Track frame count from game start
+- Record all player actions with frame number (cursor move, swap, raise)
+- Record game-produced events with frame number (auto-rise, match, clear, game over)
+- Add dev setting: "Dump Game Log" - saves seed + command list to file
+- File format: human-readable, parseable (e.g., JSON or simple text)
+- Include seed at top of dump file
+
+**Command Types:**
+- CURSOR_MOVE(frame, direction)
+- SWAP(frame, x, y)
+- MANUAL_RAISE(frame)
+- AUTO_RAISE(frame)
+- MATCH_DETECTED(frame, count)
+- BLOCKS_CLEARED(frame, count, score)
+- GAME_OVER(frame, final_score)
+
+**Success Criteria:**
+- All actions logged with correct frame numbers
+- Dump file contains seed + all commands
+- File can be used to replay/verify game (future task)
+- Log doesn't impact performance
+
+**Files to Create/Modify:**
+- `include/command_log.h` - Command types, log struct, function declarations
+- `src/shared/command_log.c` - Recording, file output
+- `include/dev_settings.h` - Add dumpGameLog option
+- `src/client/dev_settings.c` - Add menu option
+- `src/main.c` - Record commands, trigger dump
+
+**Example Output:**
+```
+SEED: 12345
+FRAME 0: GAME_START
+FRAME 45: CURSOR_MOVE DOWN
+FRAME 60: SWAP 2 5
+FRAME 75: MATCH_DETECTED 3
+FRAME 90: BLOCKS_CLEARED 3 30
+FRAME 420: AUTO_RAISE
+FRAME 1250: GAME_OVER 1580
+```
+
+---
+
+### DEBUG-005: Game Replay System
+**Description:** Replay recorded games from command log files at high speed
+
+**Context:** Enables reproducing bugs, verifying determinism, and fast-forwarding to specific game states for debugging.
+
+**Requirements:**
+- Load command log file (seed + commands from DEBUG-004)
+- Initialize game with recorded seed
+- Replay mode operates differently than normal play:
+  - No framerate cap (run as fast as possible)
+  - Disable all timers (process immediately)
+  - Skip all animations (instant state changes)
+  - Skip rendering during replay (optional: show progress bar)
+  - Only update game board state
+- Execute player commands at their recorded frames
+- Skip frames with no commands (jump to next command frame)
+- Resume normal gameplay after replay concludes
+- Command-line: `./puzzle-attack --replay game_log.txt`
+- Optional: replay to specific frame `--replay-to 500`
+
+**Success Criteria:**
+- Replay produces identical board state as original game
+- Replay completes in fraction of real-time
+- Can resume normal play after replay
+- Handles all command types correctly
+- Errors if replay diverges from expected (determinism check)
+
+**Files to Create/Modify:**
+- `include/replay.h` - Replay state, function declarations
+- `src/shared/replay.c` - File parsing, replay execution
+- `src/main.c` - Replay mode integration, command-line args
+- `include/dev_settings.h` - Add replay options
+
+**Replay Mode State:**
+```c
+typedef struct {
+    bool active;           // Currently replaying
+    int targetFrame;       // Frame to replay to (-1 = end)
+    int currentFrame;      // Current replay frame
+    Command* commands;     // Loaded command list
+    int commandCount;
+    int commandIndex;      // Next command to execute
+} ReplayState;
+```
 
 ---
 

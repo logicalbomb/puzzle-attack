@@ -17,8 +17,15 @@ void UI_Init(UIState* ui);
 // Update high score if current score is higher
 void UI_UpdateHighScore(UIState* ui, int currentScore);
 
+// Danger level for status indicator
+typedef enum {
+    DANGER_NONE,    // Green - no danger
+    DANGER_WARNING, // Yellow - countdown started (first 3 seconds)
+    DANGER_CRITICAL // Red - final 2 seconds
+} DangerLevel;
+
 // Draw gameplay UI elements (score, combo, etc.)
-void UI_DrawGameplay(const UIState* ui, const GameBoard* board, int windowWidth);
+void UI_DrawGameplay(const UIState* ui, const GameBoard* board, int windowWidth, DangerLevel danger);
 
 // Draw menu screen
 void UI_DrawMenu(int windowWidth, int windowHeight);

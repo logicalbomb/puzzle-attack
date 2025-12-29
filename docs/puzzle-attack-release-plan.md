@@ -123,10 +123,10 @@ This release plan breaks down your Puzzle Attack project into 4 major phases ali
   - Pause state (P to toggle)
   - Game over state (R to restart)
 
-- [ ] **GAME-005**: Add basic game over condition
-  - Time limit, or
-  - Move limit, or
-  - Board full condition
+- [x] **GAME-005**: Add basic game over condition
+  - Board fills to top (Panel de Pon style)
+  - Triggers when top row has blocks and no matches to clear
+  - Also triggers when RaiseBoard fails (can't push more rows)
 
 **Phase 1 Success Criteria:**
 - ✓ Can play a complete game from start to game over

@@ -8,6 +8,7 @@ GameState GameState_CheckInput(GameState current)
             if (IsKeyPressed(KEY_ENTER)) {
                 return STATE_PLAYING;
             }
+            // ESC quits via WindowShouldClose
             break;
 
         case STATE_PLAYING:
@@ -20,12 +21,20 @@ GameState GameState_CheckInput(GameState current)
             if (IsKeyPressed(KEY_P)) {
                 return STATE_PLAYING;
             }
+            if (IsKeyPressed(KEY_M)) {
+                return STATE_MENU;
+            }
+            // ESC quits via WindowShouldClose
             break;
 
         case STATE_GAME_OVER:
             if (IsKeyPressed(KEY_R)) {
-                return STATE_MENU;  // Return to menu, main.c will reset game
+                return STATE_PLAYING;  // Restart directly to playing
             }
+            if (IsKeyPressed(KEY_M)) {
+                return STATE_MENU;
+            }
+            // ESC quits via WindowShouldClose
             break;
     }
 

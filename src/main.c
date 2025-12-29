@@ -11,10 +11,15 @@
 // Clear animation timing
 static const float CLEAR_DELAY = 0.3f;  // Time to show matched blocks before clearing
 
+// Game over countdown settings
+static const float GAME_OVER_COUNTDOWN = 5.0f;  // Total countdown time
+static const float MATCH_PAUSE_DURATION = 0.2f; // Pause countdown when match detected
+
 // Helper to reset game state for new game
 static void ResetGame(GameBoard* board, Cursor* cursor, SwapAnimation* swapAnim,
                       GravityAnimation* gravityAnim, RiseAnimation* riseAnim,
                       int* comboCount, float* clearTimer, bool* waitingToClear,
+                      float* gameOverTimer, float* matchPauseTimer,
                       UIState* ui)
 {
     GameBoard_Init(board);
@@ -26,6 +31,8 @@ static void ResetGame(GameBoard* board, Cursor* cursor, SwapAnimation* swapAnim,
     *comboCount = 0;
     *clearTimer = 0.0f;
     *waitingToClear = false;
+    *gameOverTimer = 0.0f;
+    *matchPauseTimer = 0.0f;
     ui->displayCombo = 0;
     ui->lastClearCount = 0;
     ui->showingMatch = false;
@@ -71,6 +78,10 @@ int main(void)
     GameState gameState = STATE_MENU;
     int finalScore = 0;  // Score when game ended
 
+    // Game over countdown
+    float gameOverTimer = 0.0f;   // Countdown to game over (0 = not counting)
+    float matchPauseTimer = 0.0f; // Pause countdown when match detected
+
     // Initialize window
     InitWindow(WINDOW_WIDTH, WINDOW_HEIGHT, "Puzzle Attack");
     SetTargetFPS(60);
@@ -87,13 +98,13 @@ int main(void)
         // Check for state transitions
         GameState newState = GameState_CheckInput(gameState);
         if (newState != gameState) {
-            // Handle state transitions
-            if (gameState == STATE_MENU && newState == STATE_PLAYING) {
-                // Starting new game from menu
+            // Handle state transitions that need game reset
+            if (newState == STATE_PLAYING &&
+                (gameState == STATE_MENU || gameState == STATE_GAME_OVER)) {
+                // Starting new game from menu or restart from game over
                 ResetGame(&board, &cursor, &swapAnim, &gravityAnim, &riseAnim,
-                         &comboCount, &clearTimer, &waitingToClear, &ui);
-            } else if (gameState == STATE_GAME_OVER && newState == STATE_MENU) {
-                // Restart requested - will start new game when ENTER pressed
+                         &comboCount, &clearTimer, &waitingToClear,
+                         &gameOverTimer, &matchPauseTimer, &ui);
             }
             gameState = newState;
         }
@@ -119,10 +130,12 @@ int main(void)
                 }
             }
 
-            // Handle raise input (only when not animating)
+            // Handle raise input (only when not animating and not in danger)
             bool animating = swapAnim.active || gravityAnim.active || riseAnim.active || waitingToClear;
-            if (!animating && Input_RaisePressed()) {
+            bool inDanger = gameOverTimer > 0.0f;
+            if (!animating && !inDanger && Input_RaisePressed()) {
                 RaiseBoard(&board, &riseAnim);
+                // Note: Can't raise if top row filled, but game over is now handled by countdown
             }
 
             // Update swap animation
@@ -144,6 +157,7 @@ int main(void)
                     ui.showingMatch = true;
                     waitingToClear = true;
                     clearTimer = CLEAR_DELAY;
+                    matchPauseTimer = MATCH_PAUSE_DURATION;  // Pause countdown
                 } else {
                     // No matches - apply gravity (handles swapping into empty space)
                     ApplyGravity(&board, &gravityAnim);
@@ -160,6 +174,7 @@ int main(void)
                     ui.showingMatch = true;
                     waitingToClear = true;
                     clearTimer = CLEAR_DELAY;
+                    matchPauseTimer = MATCH_PAUSE_DURATION;  // Pause countdown
                 } else {
                     // Cascade ended, reset combo
                     comboCount = 0;
@@ -176,6 +191,7 @@ int main(void)
                     ui.showingMatch = true;
                     waitingToClear = true;
                     clearTimer = CLEAR_DELAY;
+                    matchPauseTimer = MATCH_PAUSE_DURATION;  // Pause countdown
                 }
             }
 
@@ -194,6 +210,41 @@ int main(void)
                     ApplyGravity(&board, &gravityAnim);
                 }
             }
+
+            // Game over countdown logic
+            if (GameBoard_IsTopRowFilled(&board)) {
+                // Start countdown if not already running
+                if (gameOverTimer <= 0.0f) {
+                    gameOverTimer = GAME_OVER_COUNTDOWN;
+                }
+
+                // Update match pause timer
+                if (matchPauseTimer > 0.0f) {
+                    matchPauseTimer -= deltaTime;
+                } else {
+                    // Decrement countdown
+                    gameOverTimer -= deltaTime;
+                    if (gameOverTimer <= 0.0f) {
+                        // Game over!
+                        finalScore = board.score;
+                        gameState = STATE_GAME_OVER;
+                    }
+                }
+            } else {
+                // Top row clear - reset countdown
+                gameOverTimer = 0.0f;
+                matchPauseTimer = 0.0f;
+            }
+        }
+
+        // Calculate danger level for UI
+        DangerLevel danger = DANGER_NONE;
+        if (gameOverTimer > 0.0f) {
+            if (gameOverTimer <= 2.0f) {
+                danger = DANGER_CRITICAL;
+            } else {
+                danger = DANGER_WARNING;
+            }
         }
 
         // Rendering
@@ -211,7 +262,7 @@ int main(void)
                 // Draw the game board with all animations
                 Renderer_DrawBoardWithAnimations(&board, boardX, boardY, &swapAnim, &gravityAnim, &riseAnim);
                 Renderer_DrawCursor(cursor.x, cursor.y, boardX, boardY);
-                UI_DrawGameplay(&ui, &board, WINDOW_WIDTH);
+                UI_DrawGameplay(&ui, &board, WINDOW_WIDTH, danger);
 
                 if (gameState == STATE_PAUSED) {
                     UI_DrawPause(WINDOW_WIDTH, WINDOW_HEIGHT);

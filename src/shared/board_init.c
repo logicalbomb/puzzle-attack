@@ -57,7 +57,10 @@ void GameBoard_FillRandom(GameBoard* board)
 
     GameBoard_Clear(board);
 
-    for (int y = 0; y < BOARD_HEIGHT; y++) {
+    // Fill bottom 3/4 of board, leave top 1/4 empty
+    int startRow = BOARD_HEIGHT / 4;
+
+    for (int y = startRow; y < BOARD_HEIGHT; y++) {
         for (int x = 0; x < BOARD_WIDTH; x++) {
             BlockType type;
             int retries = 0;

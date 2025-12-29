@@ -57,4 +57,7 @@ bool GameBoard_IsValidPosition(int x, int y);
 // Board initialization (fills with random blocks, no initial matches)
 void GameBoard_FillRandom(GameBoard* board);
 
+// Check if top row has any non-empty blocks (game over condition)
+bool GameBoard_IsTopRowFilled(const GameBoard* board);
+
 #endif // GAME_BOARD_H

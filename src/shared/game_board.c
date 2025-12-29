@@ -50,3 +50,13 @@ bool GameBoard_IsValidPosition(int x, int y)
 {
     return x >= 0 && x < BOARD_WIDTH && y >= 0 && y < BOARD_HEIGHT;
 }
+
+bool GameBoard_IsTopRowFilled(const GameBoard* board)
+{
+    for (int x = 0; x < BOARD_WIDTH; x++) {
+        if (BLOCK_TYPE(board->grid[GRID_INDEX(x, 0)]) != BLOCK_EMPTY) {
+            return true;
+        }
+    }
+    return false;
+}
