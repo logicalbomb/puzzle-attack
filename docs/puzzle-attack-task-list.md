@@ -555,7 +555,7 @@ while (matchesExist) {
 
 ---
 
-### UI-002: Game States
+### UI-002: Game States ✅ COMPLETED
 **Description:** Implement state machine for game flow
 
 **Context:** Need menu, gameplay, pause, and game over states.
@@ -573,8 +573,17 @@ while (matchesExist) {
 - Can restart game from game over
 
 **Files to Create:**
-- `src/shared/game_state.c`
+- `src/client/game_state.c` (client-only, uses raylib input)
 - `include/game_state.h`
+
+**Implementation:**
+- Created client GameState enum: STATE_MENU, STATE_PLAYING, STATE_PAUSED, STATE_GAME_OVER
+- GameState_CheckInput handles state transitions based on key presses (client-only)
+- UI functions: UI_DrawMenu, UI_DrawPause, UI_DrawGameOver (overlay with semi-transparent bg)
+- UI_DrawGameplay renamed from UI_Draw for clarity
+- ResetGame helper resets all game state for new game (preserves high score)
+- Game logic only runs in STATE_PLAYING
+- Note: Server will have different states (e.g., WAITING_FOR_PLAYERS, PLAYING, GAME_OVER)
 
 ---
 

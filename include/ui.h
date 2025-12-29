@@ -17,8 +17,16 @@ void UI_Init(UIState* ui);
 // Update high score if current score is higher
 void UI_UpdateHighScore(UIState* ui, int currentScore);
 
-// Draw all UI elements
-// boardX: x position of game board (for positioning relative elements)
-void UI_Draw(const UIState* ui, const GameBoard* board, int windowWidth);
+// Draw gameplay UI elements (score, combo, etc.)
+void UI_DrawGameplay(const UIState* ui, const GameBoard* board, int windowWidth);
+
+// Draw menu screen
+void UI_DrawMenu(int windowWidth, int windowHeight);
+
+// Draw pause overlay
+void UI_DrawPause(int windowWidth, int windowHeight);
+
+// Draw game over screen
+void UI_DrawGameOver(const UIState* ui, int finalScore, int windowWidth, int windowHeight);
 
 #endif // UI_H

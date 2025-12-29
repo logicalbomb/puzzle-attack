@@ -117,11 +117,11 @@ This release plan breaks down your Puzzle Attack project into 4 major phases ali
   - Combo counter (top-center)
   - High score tracking (top-right)
 
-- [ ] **UI-002**: Implement game states
-  - Menu state (Start/Quit)
+- [x] **UI-002**: Implement game states
+  - Menu state (ENTER to start)
   - Playing state
-  - Game over state
-  - Pause state
+  - Pause state (P to toggle)
+  - Game over state (R to restart)
 
 - [ ] **GAME-005**: Add basic game over condition
   - Time limit, or
