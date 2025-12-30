@@ -169,7 +169,9 @@ static void Game_Render(Game* game)
     }
 
     // Debug UI
-    DrawFPS(WINDOW_WIDTH - 80, 35);
+    if (game->devSettings.showDebugUI) {
+        DrawFPS(WINDOW_WIDTH - 80, UI_DEBUG_START_Y);
+    }
 
     EndDrawing();
 }
@@ -411,6 +413,9 @@ static void Update_DevMenu(Game* game)
         switch (game->devMenu.cursorIndex) {
             case 0:
                 game->devSettings.disableAutoRise = !game->devSettings.disableAutoRise;
+                break;
+            case 1:
+                game->devSettings.showDebugUI = !game->devSettings.showDebugUI;
                 break;
         }
     }

@@ -17,6 +17,9 @@ void UI_Init(UIState* ui);
 // Update high score if current score is higher
 void UI_UpdateHighScore(UIState* ui, int currentScore);
 
+// Y position where debug UI should start (below right-side UI elements)
+#define UI_DEBUG_START_Y 60
+
 // Danger level for status indicator
 typedef enum {
     DANGER_NONE,    // Green - no danger

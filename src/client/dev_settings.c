@@ -4,12 +4,14 @@
 
 // Setting labels
 static const char* SETTING_LABELS[DEV_SETTINGS_COUNT] = {
-    "Disable Auto-Rise"
+    "Disable Auto-Rise",
+    "Show Debug UI"
 };
 
 void DevSettings_Init(DevSettings* settings)
 {
     settings->disableAutoRise = false;
+    settings->showDebugUI = true;
 }
 
 void DevSettingsMenu_Init(DevSettingsMenu* menu)
@@ -46,6 +48,7 @@ void DevSettingsMenu_Draw(const DevSettingsMenu* menu, const DevSettings* settin
         bool value = false;
         switch (i) {
             case 0: value = settings->disableAutoRise; break;
+            case 1: value = settings->showDebugUI; break;
         }
 
         const char* stateStr = value ? "ON" : "OFF";

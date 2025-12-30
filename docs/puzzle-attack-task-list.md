@@ -706,7 +706,7 @@ typedef struct {
 
 ---
 
-### DEBUG-002: Debug UI Toggle
+### DEBUG-002: Debug UI Toggle ✅ COMPLETED
 **Description:** Add dev setting to show/hide debug UI elements
 
 **Context:** Debug UI (FPS counter, etc.) useful during development but should be toggleable.
@@ -724,10 +724,10 @@ typedef struct {
 - Setting accessible from dev menu
 - Easy to extend with more debug elements
 
-**Files to Modify:**
-- `include/dev_settings.h` - Add showDebugUI to DevSettings
-- `src/client/dev_settings.c` - Add menu option
-- `src/main.c` - Conditionally render debug UI
+**Files Modified:**
+- `include/dev_settings.h` - Added showDebugUI to DevSettings
+- `src/client/dev_settings.c` - Added menu option and default value
+- `src/main.c` - Conditionally render debug UI based on setting
 
 ---
 

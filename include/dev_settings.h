@@ -6,7 +6,7 @@
 // Developer settings (persist during session)
 typedef struct {
     bool disableAutoRise;
-    // Future settings...
+    bool showDebugUI;
 } DevSettings;
 
 // Dev settings menu state
@@ -15,7 +15,7 @@ typedef struct {
 } DevSettingsMenu;
 
 // Number of settings options
-#define DEV_SETTINGS_COUNT 1
+#define DEV_SETTINGS_COUNT 2
 
 // Initialize dev settings to defaults
 void DevSettings_Init(DevSettings* settings);
