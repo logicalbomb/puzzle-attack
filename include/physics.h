@@ -56,7 +56,7 @@ void RiseAnimation_Init(RiseAnimation* anim);
 // Shifts all blocks up, adds new random row at bottom
 // Populates the animation for visual effect
 // Returns true if successful, false if top row has blocks (game over)
-bool RaiseBoard(GameBoard* board, RiseAnimation* anim);
+bool RaiseBoard(GameBoard* board, RiseAnimation* anim, RNG* rng);
 
 // Update rise animation (call each frame with delta time)
 // Returns true when animation completes

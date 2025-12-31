@@ -12,6 +12,7 @@ void DevSettings_Init(DevSettings* settings)
 {
     settings->disableAutoRise = false;
     settings->showDebugUI = true;
+    settings->gameSeed = 0;  // 0 = random seed
 }
 
 void DevSettingsMenu_Init(DevSettingsMenu* menu)

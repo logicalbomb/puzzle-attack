@@ -731,7 +731,7 @@ typedef struct {
 
 ---
 
-### DEBUG-003: Deterministic Game Seeding
+### DEBUG-003: Deterministic Game Seeding ✅ COMPLETED
 **Description:** Make game fully deterministic based on seed value for reproducibility
 
 **Context:** Enables repeatable games for testing, debugging, and replay functionality. Test scripts can send known inputs at known times to verify expected outcomes.
@@ -751,19 +751,23 @@ typedef struct {
 - Test script can replay known game scenarios
 - Seed visible for sharing/reproducing bugs
 
-**Files to Create/Modify:**
-- `include/rng.h` - Seeded RNG wrapper functions
-- `src/shared/rng.c` - RNG state, seed/generate functions
-- `src/shared/board_init.c` - Use seeded RNG
-- `src/shared/physics.c` - Use seeded RNG for new rows
-- `include/dev_settings.h` - Add seed field
-- `src/main.c` - Seed initialization, display in debug UI
+**Files Created/Modified:**
+- `include/rng.h` - RNG struct with seed/state, xorshift64 functions
+- `src/shared/rng.c` - RNG_Init, RNG_Next, RNG_Range, RNG_GetSeed
+- `include/game_board.h` - Updated GameBoard_FillRandom signature
+- `src/shared/board_init.c` - Uses seeded RNG
+- `include/physics.h` - Updated RaiseBoard signature
+- `src/shared/physics.c` - Uses seeded RNG for new rows
+- `include/dev_settings.h` - Added gameSeed field
+- `src/client/dev_settings.c` - Initialize gameSeed to 0
+- `src/main.c` - RNG in Game struct, CLI --seed arg, debug UI seed display
 
-**Implementation Notes:**
-- Replace all rand() calls with seeded RNG wrapper
-- Store RNG state separately from game state for save/load
-- Consider using xorshift or similar for speed and portability
-- Command-line: `./puzzle-attack --seed 12345`
+**Implementation:**
+- xorshift64 algorithm for fast, portable RNG
+- Seed 0 = use time-based random seed
+- CLI: `./puzzle-attack --seed 12345`
+- Debug UI shows current seed below FPS
+- Same seed produces identical boards on restart
 
 ---
 
@@ -1491,6 +1495,36 @@ Design touch controls and build for Android/iOS.
 
 ### DECK-001: Steam Deck Optimization
 Add controller support and optimize for handheld.
+
+### RESEARCH-001: RNG Algorithm Investigation
+**Description:** Research randomness techniques used in game development to ensure our RNG is fit for purpose
+
+**Context:** Current implementation uses xorshift64. Game developers have specific needs for randomness (fairness perception, distribution, reproducibility). GDC talks and game dev literature discuss techniques like shuffle bags, weighted distributions, and "fair" RNG that feels random to players.
+
+**Research Areas:**
+- Shuffle bag / deck-of-cards approach (guarantees distribution over N draws)
+- Weighted random with pity timers (prevents long streaks of bad luck)
+- Perlin/simplex noise for organic-feeling patterns
+- PCG (Permuted Congruential Generator) vs xorshift vs other algorithms
+- "Rubber banding" randomness for balance
+- Player perception of fairness vs true randomness
+
+**Questions to Answer:**
+- Does xorshift64 provide adequate distribution for block colors?
+- Should new rows use shuffle bag to guarantee color variety?
+- Are there noticeable patterns or streaks in current implementation?
+- What do puzzle games (Tetris, Puyo Puyo, Panel de Pon) use?
+
+**Deliverables:**
+- Summary of findings from GDC talks / game dev resources
+- Recommendation: keep current RNG or switch algorithm
+- If switching: implementation plan with specific algorithm choice
+
+**Resources to Explore:**
+- GDC talks on randomness in games
+- Tetris Guideline (7-bag randomizer)
+- "The Game Outcome" randomness research
+- Gamasutra/Game Developer articles on RNG
 
 ---
 

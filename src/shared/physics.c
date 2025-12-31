@@ -1,13 +1,13 @@
 #include "physics.h"
-#include <stdlib.h>
+#include "rng.h"
 
 static const float GRAVITY_DURATION = 0.15f;  // seconds per cell fallen
 static const float RISE_DURATION = 0.15f;     // seconds for rise animation
 
-// Get a random block type using bit shift to match enum values (1, 2, 4, 8, 16)
-static BlockType GetRandomBlockType(void)
+// Get a random block type using RNG
+static BlockType GetRandomBlockType(RNG* rng)
 {
-    return (BlockType)(1 << (rand() % BLOCK_TYPE_COUNT));
+    return (BlockType)(1 << RNG_Range(rng, BLOCK_TYPE_COUNT));
 }
 
 // Check if placing a block at (x, y) would create a horizontal match
@@ -144,7 +144,7 @@ void RiseAnimation_Init(RiseAnimation* anim)
     anim->duration = RISE_DURATION;
 }
 
-bool RaiseBoard(GameBoard* board, RiseAnimation* anim)
+bool RaiseBoard(GameBoard* board, RiseAnimation* anim, RNG* rng)
 {
     // Check if top row has any non-empty blocks (game over condition)
     for (int x = 0; x < BOARD_WIDTH; x++) {
@@ -169,7 +169,7 @@ bool RaiseBoard(GameBoard* board, RiseAnimation* anim)
         const int maxRetries = 10;
 
         do {
-            type = GetRandomBlockType();
+            type = GetRandomBlockType(rng);
             retries++;
         } while ((WouldMatchHorizontal(board, x, bottomY, type) ||
                   WouldMatchVertical(board, x, bottomY, type)) &&

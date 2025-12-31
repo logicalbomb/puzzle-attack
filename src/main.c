@@ -8,6 +8,9 @@
 #include "ui.h"
 #include "game_state.h"
 #include "dev_settings.h"
+#include "rng.h"
+#include <string.h>
+#include <stdlib.h>
 
 // Game timing constants
 static const float CLEAR_DELAY = 0.3f;
@@ -48,13 +51,16 @@ typedef struct {
     DevSettings devSettings;
     DevSettingsMenu devMenu;
 
+    // RNG
+    RNG rng;
+
     // Display
     int boardX;
     int boardY;
 } Game;
 
 // Forward declarations
-static void Game_Init(Game* game);
+static void Game_Init(Game* game, uint64_t cliSeed);
 static void Game_ResetPlay(Game* game);
 static void Game_Update(Game* game, float deltaTime);
 static void Game_Render(Game* game);
@@ -72,10 +78,21 @@ static void Render_GameOver(Game* game);
 static void Render_DevMenu(Game* game);
 
 // Initialize game to starting state
-static void Game_Init(Game* game)
+static void Game_Init(Game* game, uint64_t cliSeed)
 {
+    DevSettings_Init(&game->devSettings);
+    DevSettingsMenu_Init(&game->devMenu);
+
+    // Apply CLI seed if provided
+    if (cliSeed != 0) {
+        game->devSettings.gameSeed = cliSeed;
+    }
+
+    // Initialize RNG with configured seed (0 = random)
+    RNG_Init(&game->rng, game->devSettings.gameSeed);
+
     GameBoard_Init(&game->board);
-    GameBoard_FillRandom(&game->board);
+    GameBoard_FillRandom(&game->board, &game->rng);
     Cursor_Init(&game->cursor);
     SwapAnimation_Init(&game->swapAnim);
     GravityAnimation_Init(&game->gravityAnim);
@@ -93,9 +110,6 @@ static void Game_Init(Game* game)
     game->state = STATE_MENU;
     game->previousState = STATE_MENU;
 
-    DevSettings_Init(&game->devSettings);
-    DevSettingsMenu_Init(&game->devMenu);
-
     game->boardX = Renderer_GetCenteredOffsetX();
     game->boardY = Renderer_GetCenteredOffsetY();
 }
@@ -103,8 +117,11 @@ static void Game_Init(Game* game)
 // Reset for new game (preserves high score and dev settings)
 static void Game_ResetPlay(Game* game)
 {
+    // Reinitialize RNG with configured seed (0 = new random seed)
+    RNG_Init(&game->rng, game->devSettings.gameSeed);
+
     GameBoard_Init(&game->board);
-    GameBoard_FillRandom(&game->board);
+    GameBoard_FillRandom(&game->board, &game->rng);
     Cursor_Init(&game->cursor);
     SwapAnimation_Init(&game->swapAnim);
     GravityAnimation_Init(&game->gravityAnim);
@@ -171,6 +188,10 @@ static void Game_Render(Game* game)
     // Debug UI
     if (game->devSettings.showDebugUI) {
         DrawFPS(WINDOW_WIDTH - 80, UI_DEBUG_START_Y);
+        // Display current game seed
+        const char* seedText = TextFormat("Seed: %llu", (unsigned long long)RNG_GetSeed(&game->rng));
+        int seedWidth = MeasureText(seedText, 16);
+        DrawText(seedText, WINDOW_WIDTH - seedWidth - 10, UI_DEBUG_START_Y + 25, 16, GRAY);
     }
 
     EndDrawing();
@@ -227,7 +248,7 @@ static void Update_Playing(Game* game, float deltaTime)
                      game->riseAnim.active || game->waitingToClear;
     bool inDanger = game->gameOverTimer > 0.0f;
     if (!animating && !inDanger && Input_RaisePressed()) {
-        RaiseBoard(&game->board, &game->riseAnim);
+        RaiseBoard(&game->board, &game->riseAnim, &game->rng);
     }
 
     // Update animations
@@ -321,7 +342,7 @@ static void Update_Playing(Game* game, float deltaTime)
         if (canAutoRise && game->matchPauseTimer <= 0.0f) {
             game->autoRiseTimer -= deltaTime;
             if (game->autoRiseTimer <= 0.0f) {
-                RaiseBoard(&game->board, &game->riseAnim);
+                RaiseBoard(&game->board, &game->riseAnim, &game->rng);
                 game->autoRiseTimer = AUTO_RISE_INTERVAL;
             }
         }
@@ -450,11 +471,26 @@ static void Render_DevMenu(Game* game)
     DevSettingsMenu_Draw(&game->devMenu, &game->devSettings, WINDOW_WIDTH, WINDOW_HEIGHT);
 }
 
-// Main entry point
-int main(void)
+// Parse command-line arguments
+static uint64_t ParseArgs(int argc, char* argv[])
 {
+    uint64_t seed = 0;
+    for (int i = 1; i < argc; i++) {
+        if (strcmp(argv[i], "--seed") == 0 && i + 1 < argc) {
+            seed = strtoull(argv[i + 1], NULL, 10);
+            i++;  // Skip next arg
+        }
+    }
+    return seed;
+}
+
+// Main entry point
+int main(int argc, char* argv[])
+{
+    uint64_t cliSeed = ParseArgs(argc, argv);
+
     Game game;
-    Game_Init(&game);
+    Game_Init(&game, cliSeed);
 
     InitWindow(WINDOW_WIDTH, WINDOW_HEIGHT, "Puzzle Attack");
     SetTargetFPS(60);

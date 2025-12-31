@@ -1,21 +1,10 @@
 #include "game_board.h"
-#include <stdlib.h>
-#include <time.h>
+#include "rng.h"
 
-// Lookup table to convert index (0-4) to BlockType
-static const BlockType BLOCK_TYPES[BLOCK_TYPE_COUNT] = {
-    BLOCK_RED,
-    BLOCK_BLUE,
-    BLOCK_GREEN,
-    BLOCK_YELLOW,
-    BLOCK_PURPLE
-};
-
-// Get a random block type
-static BlockType GetRandomBlockType(void)
+// Get a random block type using RNG
+static BlockType GetRandomBlockType(RNG* rng)
 {
-    int index = rand() % BLOCK_TYPE_COUNT;
-    return BLOCK_TYPES[index];
+    return (BlockType)(1 << RNG_Range(rng, BLOCK_TYPE_COUNT));
 }
 
 // Check if placing a block at (x, y) would create a horizontal match
@@ -47,14 +36,8 @@ static bool WouldCreateMatch(const GameBoard* board, int x, int y, BlockType typ
            WouldMatchVertical(board, x, y, type);
 }
 
-void GameBoard_FillRandom(GameBoard* board)
+void GameBoard_FillRandom(GameBoard* board, RNG* rng)
 {
-    static bool seeded = false;
-    if (!seeded) {
-        srand((unsigned int)time(NULL));
-        seeded = true;
-    }
-
     GameBoard_Clear(board);
 
     // Fill bottom 3/4 of board, leave top 1/4 empty
@@ -67,7 +50,7 @@ void GameBoard_FillRandom(GameBoard* board)
             const int maxRetries = 10;
 
             do {
-                type = GetRandomBlockType();
+                type = GetRandomBlockType(rng);
                 retries++;
             } while (WouldCreateMatch(board, x, y, type) && retries < maxRetries);
 

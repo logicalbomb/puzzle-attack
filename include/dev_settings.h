@@ -2,11 +2,13 @@
 #define DEV_SETTINGS_H
 
 #include <stdbool.h>
+#include <stdint.h>
 
 // Developer settings (persist during session)
 typedef struct {
     bool disableAutoRise;
     bool showDebugUI;
+    uint64_t gameSeed;  // Seed for next game (0 = random)
 } DevSettings;
 
 // Dev settings menu state

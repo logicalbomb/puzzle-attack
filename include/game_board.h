@@ -3,6 +3,7 @@
 
 #include <stdint.h>
 #include <stdbool.h>
+#include "rng.h"
 
 // Board dimensions
 #define BOARD_WIDTH  6
@@ -55,7 +56,7 @@ void GameBoard_SetBlockState(GameBoard* board, int x, int y, BlockState state);
 bool GameBoard_IsValidPosition(int x, int y);
 
 // Board initialization (fills with random blocks, no initial matches)
-void GameBoard_FillRandom(GameBoard* board);
+void GameBoard_FillRandom(GameBoard* board, RNG* rng);
 
 // Check if top row has any non-empty blocks (game over condition)
 bool GameBoard_IsTopRowFilled(const GameBoard* board);
