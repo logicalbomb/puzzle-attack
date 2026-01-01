@@ -9,6 +9,7 @@ typedef struct {
     bool disableAutoRise;
     bool showDebugUI;
     uint64_t gameSeed;  // Seed for next game (0 = random)
+    bool dumpLogRequested;  // Set to true when dump is triggered
 } DevSettings;
 
 // Dev settings menu state
@@ -16,8 +17,11 @@ typedef struct {
     int cursorIndex;   // Selected option (0-indexed)
 } DevSettingsMenu;
 
-// Number of settings options
+// Number of toggle settings
 #define DEV_SETTINGS_COUNT 2
+
+// Number of action buttons
+#define DEV_ACTIONS_COUNT 1
 
 // Initialize dev settings to defaults
 void DevSettings_Init(DevSettings* settings);

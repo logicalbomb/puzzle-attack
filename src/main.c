@@ -9,8 +9,10 @@
 #include "game_state.h"
 #include "dev_settings.h"
 #include "rng.h"
+#include "command_log.h"
 #include <string.h>
 #include <stdlib.h>
+#include <stdio.h>
 
 // Game timing constants
 static const float CLEAR_DELAY = 0.3f;
@@ -54,6 +56,10 @@ typedef struct {
     // RNG
     RNG rng;
 
+    // Command recording
+    CommandLog commandLog;
+    uint32_t frameCount;
+
     // Display
     int boardX;
     int boardY;
@@ -91,6 +97,10 @@ static void Game_Init(Game* game, uint64_t cliSeed)
     // Initialize RNG with configured seed (0 = random)
     RNG_Init(&game->rng, game->devSettings.gameSeed);
 
+    // Initialize command log
+    CommandLog_Init(&game->commandLog, RNG_GetSeed(&game->rng));
+    game->frameCount = 0;
+
     GameBoard_Init(&game->board);
     GameBoard_FillRandom(&game->board, &game->rng);
     Cursor_Init(&game->cursor);
@@ -120,6 +130,11 @@ static void Game_ResetPlay(Game* game)
     // Reinitialize RNG with configured seed (0 = new random seed)
     RNG_Init(&game->rng, game->devSettings.gameSeed);
 
+    // Reset command log for new game
+    CommandLog_Init(&game->commandLog, RNG_GetSeed(&game->rng));
+    game->frameCount = 0;
+    CommandLog_RecordGameStart(&game->commandLog, game->frameCount);
+
     GameBoard_Init(&game->board);
     GameBoard_FillRandom(&game->board, &game->rng);
     Cursor_Init(&game->cursor);
@@ -142,6 +157,34 @@ static void Game_ResetPlay(Game* game)
 // Main update dispatcher
 static void Game_Update(Game* game, float deltaTime)
 {
+    // Handle dump log request
+    if (game->devSettings.dumpLogRequested) {
+        game->devSettings.dumpLogRequested = false;
+        char filename[80];
+        unsigned long long seed = (unsigned long long)RNG_GetSeed(&game->rng);
+
+        // Find unique filename
+        snprintf(filename, sizeof(filename), "game_log_%llu.txt", seed);
+        FILE* test = fopen(filename, "r");
+        if (test) {
+            fclose(test);
+            int suffix = 1;
+            while (suffix < 1000) {
+                snprintf(filename, sizeof(filename), "game_log_%llu_%d.txt", seed, suffix);
+                test = fopen(filename, "r");
+                if (!test) break;
+                fclose(test);
+                suffix++;
+            }
+        }
+
+        if (CommandLog_DumpToFile(&game->commandLog, filename)) {
+            TraceLog(LOG_INFO, "Game log dumped to %s", filename);
+        } else {
+            TraceLog(LOG_WARNING, "Failed to dump game log");
+        }
+    }
+
     switch (game->state) {
         case STATE_MENU:
             Update_Menu(game);
@@ -221,13 +264,28 @@ static void Render_Menu(Game* game)
 // Playing state
 static void Update_Playing(Game* game, float deltaTime)
 {
+    // Increment frame counter
+    game->frameCount++;
+
     // Pause check
     if (IsKeyPressed(KEY_P)) {
         game->state = STATE_PAUSED;
         return;
     }
 
-    // Handle cursor movement
+    // Handle cursor movement (record before handling to get direction)
+    if (IsKeyPressed(KEY_UP)) {
+        CommandLog_RecordCursorMove(&game->commandLog, game->frameCount, DIR_UP);
+    }
+    if (IsKeyPressed(KEY_DOWN)) {
+        CommandLog_RecordCursorMove(&game->commandLog, game->frameCount, DIR_DOWN);
+    }
+    if (IsKeyPressed(KEY_LEFT)) {
+        CommandLog_RecordCursorMove(&game->commandLog, game->frameCount, DIR_LEFT);
+    }
+    if (IsKeyPressed(KEY_RIGHT)) {
+        CommandLog_RecordCursorMove(&game->commandLog, game->frameCount, DIR_RIGHT);
+    }
     Cursor_HandleInput(&game->cursor);
 
     // Handle swap input
@@ -238,6 +296,7 @@ static void Update_Playing(Game* game, float deltaTime)
 
         if (!leftFalling && !rightFalling) {
             if (SwapBlocks(&game->board, game->cursor.x, game->cursor.y)) {
+                CommandLog_RecordSwap(&game->commandLog, game->frameCount, game->cursor.x, game->cursor.y);
                 SwapAnimation_Start(&game->swapAnim, game->cursor.x, game->cursor.y);
             }
         }
@@ -248,7 +307,9 @@ static void Update_Playing(Game* game, float deltaTime)
                      game->riseAnim.active || game->waitingToClear;
     bool inDanger = game->gameOverTimer > 0.0f;
     if (!animating && !inDanger && Input_RaisePressed()) {
-        RaiseBoard(&game->board, &game->riseAnim, &game->rng);
+        if (RaiseBoard(&game->board, &game->riseAnim, &game->rng)) {
+            CommandLog_RecordManualRaise(&game->commandLog, game->frameCount);
+        }
     }
 
     // Update animations
@@ -260,6 +321,7 @@ static void Update_Playing(Game* game, float deltaTime)
     if (swapCompleted) {
         int matchCount = DetectMatches(&game->board);
         if (matchCount > 0) {
+            CommandLog_RecordMatchDetected(&game->commandLog, game->frameCount, matchCount);
             game->comboCount = 1;
             game->ui.displayCombo = 1;
             game->ui.lastClearCount = matchCount;
@@ -276,6 +338,7 @@ static void Update_Playing(Game* game, float deltaTime)
     if (gravityCompleted) {
         int matchCount = DetectMatches(&game->board);
         if (matchCount > 0) {
+            CommandLog_RecordMatchDetected(&game->commandLog, game->frameCount, matchCount);
             game->comboCount++;
             game->ui.displayCombo = game->comboCount;
             game->ui.lastClearCount = matchCount;
@@ -292,6 +355,7 @@ static void Update_Playing(Game* game, float deltaTime)
     if (riseCompleted) {
         int matchCount = DetectMatches(&game->board);
         if (matchCount > 0) {
+            CommandLog_RecordMatchDetected(&game->commandLog, game->frameCount, matchCount);
             game->comboCount = 1;
             game->ui.displayCombo = 1;
             game->ui.lastClearCount = matchCount;
@@ -306,7 +370,9 @@ static void Update_Playing(Game* game, float deltaTime)
     if (game->waitingToClear) {
         game->clearTimer -= deltaTime;
         if (game->clearTimer <= 0.0f) {
-            game->ui.lastClearCount = ClearMatches(&game->board, game->comboCount);
+            int clearedCount = ClearMatches(&game->board, game->comboCount);
+            CommandLog_RecordBlocksCleared(&game->commandLog, game->frameCount, clearedCount, game->board.score);
+            game->ui.lastClearCount = clearedCount;
             game->ui.showingMatch = false;
             game->waitingToClear = false;
             UI_UpdateHighScore(&game->ui, game->board.score);
@@ -326,6 +392,7 @@ static void Update_Playing(Game* game, float deltaTime)
             game->gameOverTimer -= deltaTime;
             if (game->gameOverTimer <= 0.0f) {
                 game->finalScore = game->board.score;
+                CommandLog_RecordGameOver(&game->commandLog, game->frameCount, game->finalScore);
                 game->state = STATE_GAME_OVER;
                 return;
             }
@@ -342,7 +409,9 @@ static void Update_Playing(Game* game, float deltaTime)
         if (canAutoRise && game->matchPauseTimer <= 0.0f) {
             game->autoRiseTimer -= deltaTime;
             if (game->autoRiseTimer <= 0.0f) {
-                RaiseBoard(&game->board, &game->riseAnim, &game->rng);
+                if (RaiseBoard(&game->board, &game->riseAnim, &game->rng)) {
+                    CommandLog_RecordAutoRaise(&game->commandLog, game->frameCount);
+                }
                 game->autoRiseTimer = AUTO_RISE_INTERVAL;
             }
         }
@@ -415,29 +484,42 @@ static void Render_GameOver(Game* game)
 // Dev menu state
 static void Update_DevMenu(Game* game)
 {
+    int totalItems = DEV_SETTINGS_COUNT + DEV_ACTIONS_COUNT;
+
     // Navigate with arrow keys
     if (IsKeyPressed(KEY_UP)) {
         game->devMenu.cursorIndex--;
         if (game->devMenu.cursorIndex < 0) {
-            game->devMenu.cursorIndex = DEV_SETTINGS_COUNT - 1;
+            game->devMenu.cursorIndex = totalItems - 1;
         }
     }
     if (IsKeyPressed(KEY_DOWN)) {
         game->devMenu.cursorIndex++;
-        if (game->devMenu.cursorIndex >= DEV_SETTINGS_COUNT) {
+        if (game->devMenu.cursorIndex >= totalItems) {
             game->devMenu.cursorIndex = 0;
         }
     }
 
-    // Toggle selected option
+    // Toggle/trigger selected option
     if (IsKeyPressed(KEY_SPACE)) {
-        switch (game->devMenu.cursorIndex) {
-            case 0:
-                game->devSettings.disableAutoRise = !game->devSettings.disableAutoRise;
-                break;
-            case 1:
-                game->devSettings.showDebugUI = !game->devSettings.showDebugUI;
-                break;
+        if (game->devMenu.cursorIndex < DEV_SETTINGS_COUNT) {
+            // Toggle settings
+            switch (game->devMenu.cursorIndex) {
+                case 0:
+                    game->devSettings.disableAutoRise = !game->devSettings.disableAutoRise;
+                    break;
+                case 1:
+                    game->devSettings.showDebugUI = !game->devSettings.showDebugUI;
+                    break;
+            }
+        } else {
+            // Trigger actions
+            int actionIndex = game->devMenu.cursorIndex - DEV_SETTINGS_COUNT;
+            switch (actionIndex) {
+                case 0:  // Dump Game Log
+                    game->devSettings.dumpLogRequested = true;
+                    break;
+            }
         }
     }
 

@@ -21,3 +21,4 @@ puzzle-attack.exe
 # Debug files
 *.pdb
 *.ilk
+game_log_*

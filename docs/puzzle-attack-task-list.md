@@ -771,7 +771,7 @@ typedef struct {
 
 ---
 
-### DEBUG-004: Command Recording System
+### DEBUG-004: Command Recording System ✅ COMPLETED
 **Description:** Record all game actions as frame-indexed commands for replay and testing
 
 **Context:** Combined with deterministic seeding, allows full game replay and automated testing by recording inputs and game events.
@@ -799,24 +799,19 @@ typedef struct {
 - File can be used to replay/verify game (future task)
 - Log doesn't impact performance
 
-**Files to Create/Modify:**
-- `include/command_log.h` - Command types, log struct, function declarations
-- `src/shared/command_log.c` - Recording, file output
-- `include/dev_settings.h` - Add dumpGameLog option
-- `src/client/dev_settings.c` - Add menu option
-- `src/main.c` - Record commands, trigger dump
+**Files Created/Modified:**
+- `include/command_log.h` - CommandType enum, Direction enum, Command struct, CommandLog struct
+- `src/shared/command_log.c` - Recording functions, CommandLog_DumpToFile
+- `include/dev_settings.h` - Added dumpLogRequested flag, DEV_ACTIONS_COUNT
+- `src/client/dev_settings.c` - Added action labels, action button rendering
+- `src/main.c` - frameCount tracking, command recording throughout Update_Playing, dump handling
 
-**Example Output:**
-```
-SEED: 12345
-FRAME 0: GAME_START
-FRAME 45: CURSOR_MOVE DOWN
-FRAME 60: SWAP 2 5
-FRAME 75: MATCH_DETECTED 3
-FRAME 90: BLOCKS_CLEARED 3 30
-FRAME 420: AUTO_RAISE
-FRAME 1250: GAME_OVER 1580
-```
+**Implementation:**
+- Max 4096 commands per session
+- Frame counter increments each Update_Playing call
+- Dev menu shows "[Dump Game Log]" action button
+- Dumps to `game_log_{seed}.txt` in working directory
+- Human-readable format matching example output
 
 ---
 
